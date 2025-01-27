@@ -1,0 +1,7 @@
+desktop.ini
+.DS_STORE
+songs/*/autosaves/
+
+# temp shiz
+data/
+images/
