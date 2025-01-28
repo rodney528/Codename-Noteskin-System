@@ -1,8 +1,13 @@
 ```jsonc
 {
+	// The image to use for the skin.
+	// Pixel sustains are "[texture]ENDS" btw.
+	// Leave blank to default to "game/notes/[json file name]"
+	"texture": "game/notes/default",
+
 	// If null, then it bends to the current state of things.
 	// When not null it uses what is put here.
-	"pixelEnforcement": null,
+	"pixelEnforcement": false,
 
 	// The 1st and 2nd slots are the x and y offset.
 	// The 3rd slot is an extra downscroll offset.

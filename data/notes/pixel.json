@@ -1,12 +1,13 @@
 {
-	"pixelEnforcement": false,
+	"texture": "stages/school/ui/arrows-pixels",
+	"pixelEnforcement": true,
 	"offsets": {
 		"still": [0, 0, 0],
 		"press": [0, 0, 0],
 		"glow": [0, 0, 0],
 		"note": [0, 0, 0]
 	},
-	"canUpdateStrum": true,
+	"canUpdateStrum": false,
 	"splashOverride": "",
-	"scale": 0.7
+	"scale": 6
 }
