@@ -1,0 +1,12 @@
+{
+	"pixelEnforcement": false,
+	"offsets": {
+		"still": [0, 0, 0],
+		"press": [0, 0, 0],
+		"glow": [0, 0, 0],
+		"note": [0, 0, 0]
+	},
+	"canUpdateStrum": true,
+	"splashOverride": "",
+	"scale": 0.7
+}

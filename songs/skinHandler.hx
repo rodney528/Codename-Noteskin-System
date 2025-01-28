@@ -1,6 +1,3 @@
-import haxe.ds.StringMap;
-import flixel.util.typeLimit.OneOfTwo;
-
 function checkFileExists(path:String):Bool
 	return Assets.exists(Paths.getPath(path));
 
@@ -16,11 +13,34 @@ function checkFileExists(path:String):Bool
 	strum.extra.get('stopSkinChange') = if true then it prevents both the global and char splash skin
 */
 
-public var defaultSkins:{note:String, splash:String} = {note: 'default', splash: 'default'}
+public var defaultSkins:{note:String, splash:String} = {note: 'default', splash: 'secret'}
 
 public var globalSkins:{note:String, splash:String} = {
 	note: SONG.meta.customValues?.noteSkin ?? defaultSkins.note,
 	splash: SONG.meta.customValues?.splashSkin ?? defaultSkins.splash
+}
+
+/**
+ * Read the `readme.md` file in `data/notes/`!
+ */
+public var noteSkinData:Map<String, {pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
+public var blankSkinData:{pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
+	pixelEnforcement: false,
+	offsets: {
+		still: [0, 0, 0],
+		press: [0, 0, 0],
+		glow: [0, 0, 0],
+		note: [0, 0, 0]
+	},
+	canUpdateStrum: false,
+	splashOverride: '',
+	scale: 0.7
+}
+function create():Void {
+	var jsonPath:String = 'data/notes/';
+	for (file in Paths.getFolderContent(jsonPath))
+		if (StringTools.endsWith(file, '.json'))
+			noteSkinData.set(StringTools.replace(file, '.json', ''), CoolUtil.parseJson(Paths.file(jsonPath + file)));
 }
 
 var noExistList:{notes:Array<String>, splashes:Array<String>} = {
@@ -32,24 +52,17 @@ function postCreate():Void {
 	if (noExistList.splashes.length > 0) trace('The splash skin' + (noExistList.splashes.length > 1 ? 's' : '') + ' "' + noExistList.splashes.join('", "') + '" don\'t exist!');
 }
 
-/* __updateNote_event = (event) -> {
-	if (event.note.extra.exists('curSkin') && event.note.strumLine.cpu) {
-		if (checkFileExists('images/game/notes/' + event.note.extra.get('curSkin') + '-botplay.png')) {
-
-		}
-	}
-} */
-
 /**
  * A quick way to reload a note or strums skin. You can even change the skin in this still.
  * @param sprite The note or strum object itself.
  * @param strumLine The strumLine it's attached to.
  * @param skinName The name of the new skin.
- * @return Did reload skin.
+ * @param isPixel Should it be pixel?
+ * @return If true, the skin reloaded successfully.
  */
-public function reloadSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, direction:Int, ?skinName:String):Bool {
+public function reloadSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, ?skinName:String, ?isPixel = false):Bool {
 	if ((sprite is Note) || (sprite is Strum)) {
-		return changeSkin(sprite, strumLine, direction, skinName ?? sprite.extra.get('curSkin'), sprite.extra.get('isPixel'), false);
+		return changeSkin(sprite, strumLine, direction, skinName ?? sprite.extra.get('curSkin'), isPixel ?? sprite.extra.get('isPixel'));
 	} else {
 		trace('Only Note\'s and Strum\'s please.');
 		return false;
@@ -62,9 +75,16 @@ public function reloadSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
  * @param skinName The name of the new skin.
  * @param isPixel Should it be pixel?
  * @param forceReload Force change the skin.
- * @return Did change skin.
+ * @return If true, the skin changed successfully.
  */
-public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, direction:Int, skinName:String, isPixel:Bool = false, forceReload:Bool = false, animPrefix:String):Bool {
+public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
+	isPixel ??= false;
+	forceReload ??= false;
+	var fixedID:Int = direction % strumLine.length;
+	animPrefix ??= ['left', 'down', 'up', 'right'][fixedID];
+
+	var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+
 	if (sprite is Note) {
 		if (!forceReload)
 			if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
@@ -85,17 +105,11 @@ public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
 				sprite.height = sprite.height / 5;
 				sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
 			}
-			sprite.updateHitbox();
-
 			loadAnimsThePixelWay(sprite, direction);
-			var pathing:String = 'images/' + theSkin + 'Scale.txt';
-			var scaling:Float = checkFileExists(pathing) ? Std.parseFloat(Assets.getText(Paths.getPath(pathing))) : PlayState.daPixelZoom;
-			sprite.setGraphicSize(Std.int((sprite.width * scaling) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
 		} else {
 			sprite.frames = Paths.getFrames(theSkin);
-			sprite.updateHitbox();
 
-			var fixedID:Int = direction % strumLine.length;
 			var colors:Array<String> = ['purple', 'blue', 'green', 'red'];
 			switch (fixedID) {
 				case 0:
@@ -107,9 +121,9 @@ public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
 					sprite.animation.addByPrefix('hold', colors[fixedID] + ' hold piece');
 					sprite.animation.addByPrefix('holdend', colors[fixedID] + ' hold end');
 			}
-
-			sprite.setGraphicSize(Std.int((sprite.width * 0.7) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
 		}
+		sprite.updateHitbox();
 		sprite.antialiasing = !isPixel;
 		sprite.extra.set('curSkin', skinName);
 		sprite.extra.set('visualIndex', direction);
@@ -128,9 +142,7 @@ public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
 			sprite.height = sprite.height / 5;
 			sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
 			loadAnimsThePixelWay(sprite, direction);
-			var pathing:String = 'images/' + theSkin + 'Scale.txt';
-			var scaling:Float = checkFileExists(pathing) ? Std.parseFloat(Assets.getText(Paths.getPath(pathing))) : PlayState.daPixelZoom;
-			sprite.setGraphicSize(Std.int((sprite.width * scaling) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
 		} else {
 			sprite.frames = Paths.getFrames(theSkin);
 			sprite.animation.addByPrefix('green', 'arrowUP');
@@ -138,13 +150,12 @@ public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
 			sprite.animation.addByPrefix('purple', 'arrowLEFT');
 			sprite.animation.addByPrefix('red', 'arrowRIGHT');
 
-			var fixedID:Int = direction % strumLine.length;
-			var dir:String = animPrefix ?? ['left', 'down', 'up', 'right'][fixedID];
-			sprite.animation.addByPrefix('static', 'arrow' + dir.toUpperCase());
-			sprite.animation.addByPrefix('pressed', dir + ' press', 24, false);
-			sprite.animation.addByPrefix('confirm', dir + ' confirm', 24, false);
-			sprite.setGraphicSize(Std.int((sprite.width * 0.7) * strumLine.strumScale));
+			sprite.animation.addByPrefix('static', 'arrow' + animPrefix.toUpperCase());
+			sprite.animation.addByPrefix('pressed', animPrefix + ' press', 24, false);
+			sprite.animation.addByPrefix('confirm', animPrefix + ' confirm', 24, false);
+			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
 		}
+		sprite.updateHitbox();
 		sprite.antialiasing = !isPixel;
 		sprite.extra.set('curSkin', skinName);
 		sprite.extra.set('visualIndex', direction);
@@ -156,7 +167,7 @@ public function changeSkin(sprite:OneOfTwo<Note, Strum>, strumLine:StrumLine, di
 	return true;
 }
 
-public function loadAnimsThePixelWay(sprite:OneOfTwo<Note, Strum>, direction:Int) {
+public function loadAnimsThePixelWay(sprite:Dynamic, direction:Int):Void {
 	if (sprite is Note) {
 		if (sprite.isSustainNote) sprite.animation.add('holdend', [direction + 4]);
 		sprite.animation.add(sprite.isSustainNote ? 'hold' : 'scroll', [direction]);
@@ -167,7 +178,7 @@ public function loadAnimsThePixelWay(sprite:OneOfTwo<Note, Strum>, direction:Int
 	} else trace('Only Note\'s and Strum\'s please.');
 }
 
-function onNoteCreation(event) {
+function onNoteCreation(event):Void {
 	// note
 	var theSkin:String = defaultSkins.note;
 
@@ -187,26 +198,26 @@ function onNoteCreation(event) {
 	var preventChange:Bool = false;
 	if (event.note.extra.exists('stopSkinChange'))
 		preventChange = event.note.extra.get('stopSkinChange').note;
-	if (theSkin != 'default' || !preventChange) {
-		switch (theSkin) {
+	if (!preventChange) {
+		var resultSkin:String = Note.customTypePathExists(Paths.image('game/notes/' + event.noteType)) ? event.noteType : theSkin;
+		switch (resultSkin) {
 			default:
-				if (!noExistList.notes.contains(theSkin)) {
+				if (!noExistList.notes.contains(resultSkin)) {
 					event.cancelled = true;
-					if (checkFileExists('images/game/notes/' + theSkin + '.png')) {
-						// trace(theSkin + ' png exists ' + strumLines.members.indexOf(event.note.strumLine));
-						if (checkFileExists('images/game/notes/' + theSkin + '.xml')) {
-							// trace(theSkin + ' xml exists ' + strumLines.members.indexOf(event.note.strumLine));
-							event.noteSprite = 'game/notes/' + theSkin;
-							changeSkin(event.note, event.note.strumLine, event.strumID, theSkin, false, true);
-						} else if (checkFileExists('images/game/notes/' + theSkin + 'ENDS.png')) { // pixel
-							// trace(theSkin + ' ENDS exists ' + strumLines.members.indexOf(event.note.strumLine));
-							event.noteSprite = 'game/notes/' + theSkin;
-							changeSkin(event.note, event.note.strumLine, event.strumID, theSkin, true, true);
-						} else {
-							// trace(theSkin + ' doesnt exists ' + strumLines.members.indexOf(event.note.strumLine));
-							if (!noExistList.notes.contains(theSkin))
-								noExistList.notes.push(theSkin);
-							event.cancelled = false;
+					if (noteSkinData.exists(resultSkin)) {
+						var skinData = noteSkinData.get(resultSkin);
+						changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, skinData.pixelEnforcement ?? false, true);
+					} else {
+						if (checkFileExists('images/game/notes/' + resultSkin + '.png')) {
+							if (checkFileExists('images/game/notes/' + resultSkin + '.xml'))
+								changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, false, true);
+							else if (checkFileExists('images/game/notes/' + resultSkin + 'ENDS.png')) // pixel
+								changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, true, true);
+							else {
+								if (!noExistList.notes.contains(resultSkin))
+									noExistList.notes.push(resultSkin);
+								event.cancelled = false;
+							}
 						}
 					}
 				}
@@ -214,9 +225,9 @@ function onNoteCreation(event) {
 	}
 
 	// splash
-	theSkin = defaultSkins.splash;
+	var theSkin:String = defaultSkins.splash;
 
-	if (globalSkins.splash != 'default')
+	if (globalSkins.splash != defaultSkins.splash)
 		theSkin = globalSkins.splash;
 
 	if (event.note.strumLine?.characters != null || event.note.strumLine?.characters[0] != null) {
@@ -229,27 +240,28 @@ function onNoteCreation(event) {
 	scripts.event('onSplashSkinSet', event);
 	if (prevSkin != event.note.extra.get('splashSkin'))
 		theSkin = event.note.extra.get('splashSkin');
-	preventChange = false;
+	var preventChange:Bool = false;
 	if (event.note.extra.exists('stopSkinChange'))
 		preventChange = event.note.extra.get('stopSkinChange').splash;
-	if (theSkin != 'default' || !preventChange) {
-		if (!noExistList.splashes.contains(theSkin)) {
-			if (checkFileExists('data/splashes/' + theSkin + '.xml'))
-				event.note.splash = theSkin;
+	if (!preventChange) {
+		var resultSkin:String = checkFileExists('data/splashes/' + event.noteType + '.xml') ? event.noteType : theSkin;
+		if (!noExistList.splashes.contains(resultSkin)) {
+			if (checkFileExists('data/splashes/' + resultSkin + '.xml'))
+				event.note.splash = resultSkin;
 			else {
-				if (!noExistList.splashes.contains(theSkin))
-					noExistList.splashes.push(theSkin);
+				if (!noExistList.splashes.contains(resultSkin))
+					noExistList.splashes.push(resultSkin);
 			}
 		}
 	}
 }
 
-function onStrumCreation(event) {
+function onStrumCreation(event):Void {
 	var strumLine:StrumLine = strumLines.members[event.player];
 
 	var theSkin:String = defaultSkins.note;
 
-	if (globalSkins.note != 'default')
+	if (globalSkins.note != defaultSkins.note)
 		theSkin = globalSkins.note;
 
 	if (strumLine?.characters != null || strumLine?.characters[0] != null) {
@@ -265,22 +277,25 @@ function onStrumCreation(event) {
 	var preventChange:Bool = false;
 	if (event.strum.extra.exists('stopSkinChange'))
 		preventChange = event.strum.extra.get('stopSkinChange');
-	if (theSkin != 'default' && !preventChange) {
+	if (!preventChange) {
 		switch (theSkin) {
 			default:
 				if (!noExistList.notes.contains(theSkin)) {
 					event.cancelled = true;
-					if (checkFileExists('images/game/notes/' + theSkin + '.png')) {
-						if (checkFileExists('images/game/notes/' + theSkin + '.xml')) {
-							event.sprite = 'game/notes/' + theSkin;
-							changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, false, true, event.animPrefix);
-						} else if (checkFileExists('images/game/notes/' + theSkin + 'ENDS.png')) { // pixel way
-							event.sprite = 'game/notes/' + theSkin;
-							changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, true, true, event.animPrefix);
-						} else {
-							if (!noExistList.notes.contains(theSkin))
-								noExistList.notes.push(theSkin);
-							event.cancelled = false;
+					if (noteSkinData.exists(theSkin)) {
+						var skinData = noteSkinData.get(theSkin);
+						changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, skinData.pixelEnforcement ?? false, true, event.animPrefix);
+					} else {
+						if (checkFileExists('images/game/notes/' + theSkin + '.png')) {
+							if (checkFileExists('images/game/notes/' + theSkin + '.xml'))
+								changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, false, true, event.animPrefix);
+							else if (checkFileExists('images/game/notes/' + theSkin + 'ENDS.png')) // pixel
+								changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, true, true, event.animPrefix);
+							else {
+								if (!noExistList.notes.contains(theSkin))
+									noExistList.notes.push(theSkin);
+								event.cancelled = false;
+							}
 						}
 					}
 				}
@@ -288,68 +303,18 @@ function onStrumCreation(event) {
 	}
 }
 
-public var skinOffsets:StringMap<Array<Float>> = new StringMap();
-public var strumOffsets:StringMap<Array<Float>> = new StringMap();
+function onNoteHit(event):Void {
+	if (noteSkinData.exists(event.note.extra.get('curSkin'))) {
+		var skinData = noteSkinData.get(event.note.extra.get('curSkin'));
+		if (skinData.canUpdateStrum) {
+			reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
+		} else if (noteSkinData.exists(globalSkins.note ?? defaultSkins.note)) {
+			var skin:String = globalSkins.note ?? defaultSkins.note;
+			var globalData = noteSkinData.get(skin);
+			reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, skin, globalData.pixelEnforcement ?? event.note.extra.get('isPixel'));
+		}
 
-function stepHit() {
-	for (strumLine in strumLines) {
-		for (note in strumLine.notes) {
-			var theSkin:String = note.extra.get('curSkin');
-			if (skinOffsets.exists(theSkin)) {
-				var id:Int = note.extra.get('visualIndex');
-				note.frameOffset.set(skinOffsets.get(theSkin)[id][0] ?? 0, skinOffsets.get(theSkin)[id][1] ?? 0);
-			} else note.frameOffset.set();
-		}
-		for (strum in strumLine) {
-			var theSkin:String = strum.extra.get('curSkin');
-			if (strumOffsets.exists(theSkin))
-				if (strumOffsets.get(theSkin).exists(strum.animation.name)) {
-					var id:Int = strum.extra.get('visualIndex');
-					strum.frameOffset.set(strumOffsets.get(theSkin).get(strum.animation.name)[id][0] ?? 0, strumOffsets.get(theSkin).get(strum.animation.name)[id][1] ?? 0);
-				} else strum.frameOffset.set();
-			else strum.frameOffset.set();
-		}
+		if (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null)
+			event.note.splash = skinData.splashOverride;
 	}
-}
-
-function onNoteHit(event) {
-	reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction);
-}
-
-/**
- * Set note skin offsets.
- * @param name Skin name.
- * @param x X offset.
- * @param y Y offset.
- */
-function setupSkinOffset(name:String, offsets:Array<Float>) {
-	if (skinOffsets == null) skinOffsets = new StringMap();
-	skinOffsets.set(name, offsets);
-}
-/**
- * Set strum skin offsets.
- * @param name Skin name.
- * @param anim Animation name.
- * @param x X offset.
- * @param y Y offset.
- */
-function setupStrumOffsets(name:String, anim:String, offsets:Array<Float>) {
-	if (strumOffsets == null) strumOffsets = new StringMap();
-	if (!strumOffsets.exists(name)) strumOffsets.set(name, new StringMap());
-	strumOffsets.get(name).set(anim, offsets);
-}
-
-function create() {
-	/* setupSkinOffset('mariosmadness', [
-		69, 420,
-		69, 420,
-		69, 420,
-		69, 420
-	]);
-	setupStrumOffsets('mariosmadness', 'static', [
-		69, 420,
-		69, 420,
-		69, 420,
-		69, 420
-	]); */
 }
