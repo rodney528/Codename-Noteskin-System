@@ -16,7 +16,7 @@ function checkFileExists(path:String):Bool
 	strum.extra.get('stopSkinChange') = if true then it prevents both the song and char splash skin
 */
 
-public var defaultSkins:{note:String, splash:String} = {note: 'pixel', splash: 'pixel-secret'}
+public var defaultSkins:{note:String, splash:String} = {note: 'funkin', splash: 'secret'}
 
 public var songSkins:{note:String, splash:String} = {
 	note: SONG.meta.customValues?.noteSkin ?? defaultSkins.note,
