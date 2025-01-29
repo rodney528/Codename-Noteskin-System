@@ -1,15 +1,14 @@
 # Rodney's Codename Engine Noteskin System
 ## Current Features
-* Per character skins. Is set via a characters extra var.
-* Per song skins.
-## Implementing
-* Mid-song skin change event.
-* Per strumLine system.
+* Per song skins. Is set via having custom meta file values of "noteSkin" and "splashSkin".
+* Per character skins. Is set via a characters extra var. You can also disable it by having a custom meta value called "charSkins" and setting it to false.
+* Per strumLine skins. Is set via the "Skin Parameters" button in the chart editor strumline edit menu.
 * Offset system.
-* May add Quant support.
+## Implementing
 * Noteskin Editor.
+* Mid-song skin change event.
 * May add chart editor compatibility. Like Nebula's system.
+* May add Quant support.
 
 This system is inspired by the simple skin system in Cyber Sensation!
-
 # This is a WIP project!

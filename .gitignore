@@ -3,5 +3,6 @@ desktop.ini
 songs/*/autosaves/
 
 # temp shiz
-data/
+data/notes/
+data/splashes/
 images/
