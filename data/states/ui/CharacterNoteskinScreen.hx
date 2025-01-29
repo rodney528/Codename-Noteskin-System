@@ -164,6 +164,21 @@ function postCreate():Void {
 			var prevAnim:String = strum.getAnim();
 			changeSkin(strum, previewStrumLine, i, skinName, skinData.pixelEnforcement);
 			strum.playAnim(prevAnim);
+
+			var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
+
+			var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
+			if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
+				skinName = skinData.splashOverride;
+
+			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
+			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
+			splashHandler.add(splash);
+			while (splashHandler.members.length > 8)
+				splashHandler.remove(splashHandler.members[0], true);
+
+			var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
+			splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
 		}
 	}
 	splashSkinDropdown.onChange = (index:Int) -> {
@@ -244,6 +259,11 @@ function update(elapsed:Float):Void {
 				strum.playAnim('confirm');
 
 				var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
+
+				var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
+				if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
+					skinName = skinData.splashOverride;
+
 				splashHandler.__grp = splashHandler.getSplashGroup(skinName);
 				var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
 				splashHandler.add(splash);
