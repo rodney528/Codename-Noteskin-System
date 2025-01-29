@@ -18,8 +18,8 @@ function checkFileExists(path:String):Bool
 
 public var defaultSkins:{note:String, splash:String} = {note: 'funkin', splash: 'secret'}
 public var songSkins:{note:String, splash:String} = {
-	note: SONG.meta.customValues?.noteSkin ?? defaultSkins.note,
-	splash: SONG.meta.customValues?.splashSkin ?? defaultSkins.splash
+	note: StringTools.replace(SONG.meta.customValues?.noteSkin ?? 'Default Skin', 'Default Skin', defaultSkins.note),
+	splash: StringTools.replace(SONG.meta.customValues?.splashSkin ?? 'Default Skin', 'Default Skin', defaultSkins.splash)
 }
 
 var allowCharSkins:Bool = SONG.meta.customValues?.charSkins ?? true;
@@ -29,6 +29,7 @@ var allowCharSkins:Bool = SONG.meta.customValues?.charSkins ?? true;
  */
 public var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 public var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
+	texture: null,
 	pixelEnforcement: false,
 	offsets: {
 		still: [0, 0, 0],
@@ -46,10 +47,15 @@ public function getSkinPath(skin:String):String {
 	return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
 }
 
-function skinNameHelper(name:String, ?splash:Bool = false):String {
+function skinNameHelper(name:String, ?splash:Bool = false, ?char:Bool = false):String {
 	splash ??= false;
-	var result:String = StringTools.replace(name, 'Default Skin', splash ? defaultSkins.splash : defaultSkins.note);
-	return StringTools.replace(result, 'Song Skin', splash ? (songSkins.splash ?? defaultSkins.splash) : (songSkins.note ?? defaultSkins.note));
+	char ??= false;
+	if (char)
+		return StringTools.replace(name, 'No Skin', splash ? (songSkins.splash ?? defaultSkins.splash) : (songSkins.note ?? defaultSkins.note));
+	else {
+		var result:String = StringTools.replace(name, 'Default Skin', splash ? defaultSkins.splash : defaultSkins.note);
+		return StringTools.replace(result, 'Song Skin', splash ? (songSkins.splash ?? defaultSkins.splash) : (songSkins.note ?? defaultSkins.note));
+	}
 }
 public function returnSkinMeta():Array<{note:String, splash:String}> {
 	if (checkFileExists('songs/' + curSong + '/skins.json')) {
@@ -287,7 +293,7 @@ function onNoteCreation(event):Void {
 	// assign character skin
 	if (allowCharSkins && (event.note.strumLine?.characters != null || event.note.strumLine?.characters[0] != null)) {
 		var charSkin:String = event.note.strumLine.characters[0].extra.get('noteSkin');
-		if (charSkin != null) theSkin = charSkin;
+		if (charSkin != null) theSkin = skinNameHelper(charSkin, false, true);
 	}
 
 	// complicated ass shit, I don't remember how it works
@@ -334,7 +340,7 @@ function onNoteCreation(event):Void {
 	// assign character skin
 	if (allowCharSkins && (event.note.strumLine?.characters != null || event.note.strumLine?.characters[0] != null)) {
 		var charSkin:String = event.note.strumLine.characters[0].extra.get('splashSkin');
-		if (charSkin != null) theSkin = charSkin;
+		if (charSkin != null) theSkin = skinNameHelper(charSkin, true, true);
 	}
 
 	// complicated ass shit, I don't remember how it works
@@ -375,7 +381,7 @@ function onStrumCreation(event):Void {
 	// assign character skin
 	if (allowCharSkins && (strumLine?.characters != null || strumLine?.characters[0] != null)) {
 		var charSkin:String = strumLine.characters[0].extra.get('noteSkin');
-		if (charSkin != null) theSkin = charSkin;
+		if (charSkin != null) theSkin = skinNameHelper(charSkin, false, true);
 	}
 
 	// complicated ass shit, I don't remember how it works

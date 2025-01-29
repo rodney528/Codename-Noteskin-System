@@ -3,6 +3,7 @@
 * Per song skins. Is set via having custom meta file values of "noteSkin" and "splashSkin".
 * Per character skins. Is set via a characters extra var. You can also disable it by having a custom meta value called "charSkins" and setting it to false.
 * Per strumLine skins. Is set via the "Skin Parameters" button in the chart editor strumline edit menu.
+* The ability to select chosen skins in game.
 * Offset system.
 ## Implementing
 * Noteskin Editor.

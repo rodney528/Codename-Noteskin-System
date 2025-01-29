@@ -1,7 +1,6 @@
 import sys.io.File;
 import funkin.editors.charter.Charter;
 import funkin.editors.ui.UIButton;
-import funkin.editors.ui.UICheckbox;
 import funkin.editors.ui.UIDropDown;
 import funkin.editors.ui.UIText;
 import funkin.game.SplashHandler;
@@ -16,10 +15,11 @@ var previewStrumLine:StrumLine;
 
 function skinNameHelper(name:String, ?splash:Bool = false):String {
 	splash ??= false;
-	return StringTools.replace(name, 'Default Skin', splash ? 'secret' : 'funkin');
+	var result:String = StringTools.replace(name, 'Default Skin', splash ? 'secret' : 'funkin');
+	return StringTools.replace(result, 'Song Skin', splash ? (PlayState.SONG.meta.customValues?.splashSkin ?? 'secret') : (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
 }
-var noteSkinList:Array<String> = ['Default Skin'];
-var splashSkinList:Array<String> = ['Default Skin'];
+var noteSkinList:Array<String> = ['Default Skin', 'Song Skin'];
+var splashSkinList:Array<String> = ['Default Skin', 'Song Skin'];
 
 var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
@@ -39,6 +39,17 @@ function getSkinPath(skin:String):String {
 	var data = noteSkinData.exists(skin) ? noteSkinData.get(skin) : null;
 	var texture:String = data != null ? data.texture : ('game/notes/' + skin);
 	return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
+}
+
+function returnSkinMeta():Array<{note:String, splash:String}> {
+	if (checkFileExists('songs/' + Charter.__song + '/skins.json')) {
+		return CoolUtil.parseJson(Paths.file('songs/' + Charter.__song + '/skins.json'));
+	} else {
+		return [
+			for (strumLine in Charter.instance.strumLines)
+				{note: 'Song Skin', splash: 'Song Skin'}
+		];
+	}
 }
 
 function create():Void {
@@ -106,10 +117,11 @@ function postCreate():Void {
 		add(new UIText(ui.x, ui.y - 24, 0, text));
 
 	var title:UIText;
-	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Edit Song Skin', 28));
+	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Edit Strumline Skin', 28));
 
-	add(noteSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, noteSkinList, noteSkinList.indexOf(PlayState.SONG.meta.customValues?.noteSkin ?? 'Default Skin')) ?? 0);
-	add(splashSkinDropdown = new UIDropDown(noteSkinDropdown.x, noteSkinDropdown.y + 65, 200, 32, splashSkinList, splashSkinList.indexOf(PlayState.SONG.meta.customValues?.splashSkin ?? 'Default Skin')) ?? 0);
+	var skinMeta = returnSkinMeta();
+	add(noteSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, noteSkinList, noteSkinList.indexOf(skinMeta[_parentState.strumLineID].note)) ?? 1);
+	add(splashSkinDropdown = new UIDropDown(noteSkinDropdown.x, noteSkinDropdown.y + 65, 200, 32, splashSkinList, splashSkinList.indexOf(skinMeta[_parentState.strumLineID].splash)) ?? 1);
 	addLabelOn(noteSkinDropdown, 'Note Skin');
 	addLabelOn(splashSkinDropdown, 'Splash Skin');
 
@@ -194,16 +206,12 @@ function postCreate():Void {
 		splash?.active = false;
 	}
 
-	var allowCharSkins:UICheckbox;
 	var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
 		var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
-		var result = PlayState.SONG.meta;
-		if (result.customValues == null)
-			result.customValues = {};
-		result.customValues?.noteSkin = noteSkinList[noteSkinDropdown.index];
-		result.customValues?.splashSkin = splashSkinList[splashSkinDropdown.index];
-		result.customValues?.charSkins = allowCharSkins.checked;
-		File.saveContent(modRoot + 'songs/' + Charter.__song + '/meta.json', Json.stringify(PlayState.SONG.meta = result, null, '\t'));
+		var result = returnSkinMeta();
+		result[_parentState.strumLineID].note = noteSkinList[noteSkinDropdown.index];
+		result[_parentState.strumLineID].splash = splashSkinList[splashSkinDropdown.index];
+		File.saveContent(modRoot + 'songs/' + Charter.__song + '/skins.json', Json.stringify(result, null, '\t'));
 		close();
 	}, 125);
 	add(saveButton);
@@ -212,12 +220,7 @@ function postCreate():Void {
 	closeButton.color = FlxColor.RED;
 	add(closeButton);
 
-	var btwText:UIText;
-	add(btwText = new UIText(windowSpr.x + 10, closeButton.y - 140, winWidth - 10, 'Note:\n\n    * The "Default Skin" preview will not properly match the values of the "defaultSkins" variable, due to how this is coded.', 15, FlxColor.GRAY));
-
-	add(allowCharSkins = new UICheckbox(btwText.x + 5, btwText.y + btwText.height + 17, 'Allow Character Skins?', PlayState.SONG.meta.customValues?.charSkins ?? true));
-	allowCharSkins.x += 6;
-	allowCharSkins.y += 4;
+	add(new UIText(windowSpr.x + 10, closeButton.y - 140, winWidth - 10, 'Notes:\n\n    * The "Default Skin" preview will not properly match the values of the "defaultSkins" variable, due to how this is coded.\n\n    * The "Song Skin" preview will be just fine as information for that is stored in the songs meta file.', 15, FlxColor.GRAY));
 }
 
 function update(elapsed:Float):Void {
@@ -276,7 +279,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'funkin');
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
 		if (isPixel) {
 			if (sprite.isSustainNote) {
 				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
@@ -320,7 +323,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'funkin');
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
 		if (isPixel) {
 			sprite.loadGraphic(Paths.image(theSkin));
 			sprite.width = sprite.width / 4;
