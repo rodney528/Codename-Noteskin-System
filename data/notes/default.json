@@ -1,0 +1,29 @@
+{
+	"canUpdateStrum": false,
+	"offsets": {
+		"note": [
+			0,
+			0,
+			0
+		],
+		"still": [
+			0,
+			0,
+			0
+		],
+		"glow": [
+			0,
+			0,
+			0
+		],
+		"press": [
+			0,
+			0,
+			0
+		]
+	},
+	"scale": 0.7,
+	"pixelEnforcement": false,
+	"splashOverride": "",
+	"texture": "game/notes/default"
+}

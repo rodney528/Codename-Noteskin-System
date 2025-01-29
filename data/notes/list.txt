@@ -1,2 +1,2 @@
-funkin
-pixel
+default
+pixel-default

@@ -16,7 +16,7 @@ function checkFileExists(path:String):Bool
 	strum.extra.get('stopSkinChange') = if true then it prevents both the song and char splash skin
 */
 
-public var defaultSkins:{note:String, splash:String} = {note: 'funkin', splash: 'secret'}
+public var defaultSkins:{note:String, splash:String} = {note: 'default', splash: 'default'}
 public var songSkins:{note:String, splash:String} = {
 	note: StringTools.replace(SONG.meta.customValues?.noteSkin ?? 'Default Skin', 'Default Skin', defaultSkins.note),
 	splash: StringTools.replace(SONG.meta.customValues?.splashSkin ?? 'Default Skin', 'Default Skin', defaultSkins.splash)
@@ -90,9 +90,19 @@ function create():Void {
 
 	for (i => strumLine in strumLines.members) {
 		var skinMeta = returnSkinMeta()[i];
-		var skinData = noteSkinData.get(skinNameHelper(skinMeta.note));
-		strumLine.extra.set('noteSkin', skinNameHelper(skinMeta.note));
-		strumLine.extra.set('splashSkin', skinNameHelper(skinMeta.splash, true));
+		var skinName:String = skinNameHelper(skinMeta.note);
+		var splashName:String = skinNameHelper(skinMeta.splash, true);
+
+		if (allowCharSkins && (strumLine?.characters != null || strumLine?.characters[0] != null)) {
+			var charSkin:String = strumLine.characters[0].extra.get('noteSkin');
+			var charSplash:String = strumLine.characters[0].extra.get('splashSkin');
+			if (charSkin != null) skinName = skinNameHelper(charSkin, false, true);
+			if (charSplash != null) splashName = skinNameHelper(charSplash, true, true);
+		}
+
+		var skinData = noteSkinData.get(skinName);
+		strumLine.extra.set('noteSkin', skinName);
+		strumLine.extra.set('splashSkin', splashName);
 		strumLine.extra.set('isPixel', skinData.pixelEnforcement ?? false);
 	}
 }
@@ -428,11 +438,11 @@ function onPostGenerateStrums(event):Void {
 }
 
 function onNoteHit(event):Void {
-	var strumLineSkin = noteSkinData.get(event.note.strumLine.extra.get('curSkin'));
+	var strumLineSkin = noteSkinData.get(event.note.strumLine.extra.get('noteSkin'));
 	var skinData = noteSkinData.get(event.note.extra.get('curSkin'));
 
 	if (skinData.canUpdateStrum) reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
-	else reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.strumLine.extra.get('curSkin'), strumLineSkin?.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
+	else reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
 
 	if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 		event.note.splash = skinData.splashOverride;

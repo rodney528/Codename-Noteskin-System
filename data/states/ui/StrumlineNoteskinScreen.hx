@@ -14,8 +14,8 @@ var previewStrumLine:StrumLine;
 
 function skinNameHelper(name:String, ?splash:Bool = false):String {
 	splash ??= false;
-	var result:String = StringTools.replace(name, 'Default Skin', splash ? 'secret' : 'funkin');
-	return StringTools.replace(result, 'Song Skin', splash ? (PlayState.SONG.meta.customValues?.splashSkin ?? 'secret') : (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
+	var result:String = StringTools.replace(name, 'Default Skin', 'default');
+	return StringTools.replace(result, 'Song Skin', splash ? (PlayState.SONG.meta.customValues?.splashSkin ?? 'default') : (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
 }
 var noteSkinList:Array<String> = ['Default Skin', 'Song Skin'];
 var splashSkinList:Array<String> = ['Default Skin', 'Song Skin'];
@@ -298,7 +298,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
 		if (isPixel) {
 			if (sprite.isSustainNote) {
 				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
@@ -342,7 +342,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
 		if (isPixel) {
 			sprite.loadGraphic(Paths.image(theSkin));
 			sprite.width = sprite.width / 4;

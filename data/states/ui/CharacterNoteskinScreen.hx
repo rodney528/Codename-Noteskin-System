@@ -14,7 +14,7 @@ var previewStrumLine:StrumLine;
 
 function skinNameHelper(name:String, ?splash:Bool = false):String {
 	splash ??= false;
-	return StringTools.replace(name, 'No Skin', splash ? 'secret' : 'funkin');
+	return StringTools.replace(name, 'No Skin', 'default');
 }
 var noteSkinList:Array<String> = ['No Skin'];
 var splashSkinList:Array<String> = ['No Skin'];
@@ -306,7 +306,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
 		if (isPixel) {
 			if (sprite.isSustainNote) {
 				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
@@ -350,7 +350,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'funkin'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
 		if (isPixel) {
 			sprite.loadGraphic(Paths.image(theSkin));
 			sprite.width = sprite.width / 4;
