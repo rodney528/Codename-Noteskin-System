@@ -1,4 +1,3 @@
-import sys.io.File;
 import funkin.editors.charter.Charter;
 import funkin.editors.ui.UIButton;
 import funkin.editors.ui.UICheckbox;
@@ -203,7 +202,7 @@ function postCreate():Void {
 		result.customValues?.noteSkin = noteSkinList[noteSkinDropdown.index];
 		result.customValues?.splashSkin = splashSkinList[splashSkinDropdown.index];
 		result.customValues?.charSkins = allowCharSkins.checked;
-		File.saveContent(modRoot + 'songs/' + Charter.__song + '/meta.json', Json.stringify(PlayState.SONG.meta = result, null, '\t'));
+		CoolUtil.safeSaveFile(modRoot + 'songs/' + Charter.__song + '/meta.json', Json.stringify(PlayState.SONG.meta = result, null, '\t'));
 		close();
 	}, 125);
 	add(saveButton);

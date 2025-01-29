@@ -1,4 +1,3 @@
-import sys.io.File;
 import funkin.editors.charter.Charter;
 import funkin.editors.ui.UIButton;
 import funkin.editors.ui.UIDropDown;
@@ -211,7 +210,7 @@ function postCreate():Void {
 		var result = returnSkinMeta();
 		result[_parentState.strumLineID].note = noteSkinList[noteSkinDropdown.index];
 		result[_parentState.strumLineID].splash = splashSkinList[splashSkinDropdown.index];
-		File.saveContent(modRoot + 'songs/' + Charter.__song + '/skins.json', Json.stringify(result, null, '\t'));
+		CoolUtil.safeSaveFile(modRoot + 'songs/' + Charter.__song + '/skins.json', Json.stringify(result, null, '\t'));
 		close();
 	}, 125);
 	add(saveButton);
