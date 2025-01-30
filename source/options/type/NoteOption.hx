@@ -10,8 +10,8 @@ class NoteOption extends TextOption {
 		changeSkin(note, FlxG.random.int(0, 3), text, skinData.pixelEnforcement, true);
 		note.animation.play('scroll');
 		note.setPosition(
-			__text.x - (note.width / 2) - 70,
-			__text.y + (__text.height / 2) - (note.height / 2)
+			__text.x - (note.width / 2) - 70 + skinData.offsets.note[0],
+			__text.y + (__text.height / 2) - (note.height / 2) + skinData.offsets.note[1]
 		);
 		add(note);
 	}

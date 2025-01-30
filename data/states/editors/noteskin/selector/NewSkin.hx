@@ -272,12 +272,12 @@ function postCreate():Void {
 }
 
 function update(elapsed:Float):Void {
-	if (skinNameTextField.focused || imagePathTextField.focused || splashOverrideTextField.focused) return;
+	if (skinNameTextField.focused || imagePathTextField.focused || splashOverrideTextField.focused || skinScaleStepper.focused) return;
 	if (FlxG.keys.justPressed.TAB)
 		colonThree.visible = !colonThree.visible;
 
-	var press:Array<Int> = [controls.LEFT_P, controls.DOWN_P, controls.UP_P, controls.RIGHT_P];
-	var release:Array<Int> = [controls.LEFT_R, controls.DOWN_R, controls.UP_R, controls.RIGHT_R];
+	var press:Array<Int> = [controls.NOTE_LEFT_P, controls.NOTE_DOWN_P, controls.NOTE_UP_P, controls.NOTE_RIGHT_P];
+	var release:Array<Int> = [controls.NOTE_LEFT_R, controls.NOTE_DOWN_R, controls.NOTE_UP_R, controls.NOTE_RIGHT_R];
 	for (i => strum in previewStrumLine.members) {
 		if (press[i]) {
 			if (colonThree.visible) {
