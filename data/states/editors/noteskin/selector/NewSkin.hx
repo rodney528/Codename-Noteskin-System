@@ -259,9 +259,10 @@ function postCreate():Void {
 			splashOverride: checkFileExists('data/splashes/' + splashOverrideTextField.label.text + '.xml') ? splashOverrideTextField.label.text : '',
 			scale: skinScaleStepper.value
 		}, null, '\t'));
-		_parentState.main.add(new NoteOption(skinNameTextField.label.text, 'Is Pixel: ' + data.pixelEnforcement + ' | Can Update Strum: ' + data.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(data.splashOverride) != '' && data.splashOverride != null ? data.splashOverride : 'No Skin') + ' | Scale: ' + data.scale, () ->
-			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'))
-		, data));
+		_parentState.main.add(new NoteOption(skinNameTextField.label.text, 'Image Path: "' + (StringTools.trim(data.texture) != '' && data.texture != null ? data.texture : 'game/notes/default') + '" | Is Pixel: ' + data.pixelEnforcement + ' | Can Update Strum: ' + data.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(data.splashOverride) != '' && data.splashOverride != null ? data.splashOverride : 'No Skin') + ' | Scale: ' + data.scale, () -> {
+			selectedSkin = skinNameTextField.label.text;
+			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
+		}, data));
 		close();
 	}, 125);
 	add(saveButton);
@@ -272,7 +273,8 @@ function postCreate():Void {
 }
 
 function update(elapsed:Float):Void {
-	if (skinNameTextField.focused || imagePathTextField.focused || splashOverrideTextField.focused || skinScaleStepper.focused) return;
+	if (state.currentFocus != null) return;
+
 	if (FlxG.keys.justPressed.TAB)
 		colonThree.visible = !colonThree.visible;
 
@@ -309,10 +311,12 @@ function checkFileExists(path:String):Bool
  * Change the note or strum skin.
  * @param sprite The note or strum object itself.
  * @param strumLine The strumLine it's attached to.
+ * @param direction The direction ID.
  * @param skinName The name of the new skin.
  * @param isPixel Should it be pixel?
  * @param forceReload Force change the skin.
- * @return If true, the skin changed successfully.
+ * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
+ * @return `Bool` ~ If true, the skin changed successfully.
  */
 function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
 	isPixel ??= false;

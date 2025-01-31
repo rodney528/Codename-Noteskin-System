@@ -27,10 +27,13 @@ class NoteOption extends TextOption {
 	/**
 	 * Change the note or strum skin.
 	 * @param sprite The note or strum object itself.
+	 * @param strumLine The strumLine it's attached to.
+	 * @param direction The direction ID.
 	 * @param skinName The name of the new skin.
 	 * @param isPixel Should it be pixel?
 	 * @param forceReload Force change the skin.
-	 * @return If true, the skin changed successfully.
+	 * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
+	 * @return `Bool` ~ If true, the skin changed successfully.
 	 */
 	private function changeSkin(sprite:Dynamic, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false):Bool {
 		isPixel ??= false;

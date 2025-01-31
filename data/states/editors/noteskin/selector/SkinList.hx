@@ -6,6 +6,7 @@ import funkin.options.type.NewOption;
 import funkin.options.type.OptionType;
 import options.type.NoteOption;
 
+static var selectedSkin:String = 'default';
 var noteSkinList:Array<String> = [];
 
 var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
@@ -42,9 +43,10 @@ function create():Void {
 
 		noteSkinData.set(simpleName, skinData);
 		noteSkinList.push(simpleName);
-		noteOptions.push(new NoteOption(simpleName, 'Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () ->
-			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'))
-		, skinData));
+		noteOptions.push(new NoteOption(simpleName, 'Image Path: "' + (StringTools.trim(skinData.texture) != '' && skinData.texture != null ? skinData.texture : 'game/notes/default') + '" | Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () -> {
+			selectedSkin = simpleName;
+			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
+		}, skinData));
 	}
 	for (file in Paths.getFolderContent(jsonPath)) {
 		if (StringTools.endsWith(file, '.json')) {
@@ -64,9 +66,10 @@ function create():Void {
 
 			noteSkinData.set(simpleName, skinData);
 			noteSkinList.push(simpleName);
-			noteOptions.push(new NoteOption(simpleName, 'Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () ->
-				FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'))
-			, skinData));
+			noteOptions.push(new NoteOption(simpleName, 'Image Path: "' + (StringTools.trim(skinData.texture) != '' && skinData.texture != null ? skinData.texture : 'game/notes/default') + '" | Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () -> {
+				selectedSkin = simpleName;
+				FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
+			}, skinData));
 		}
 	}
 
