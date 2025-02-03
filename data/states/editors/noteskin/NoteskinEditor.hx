@@ -64,7 +64,7 @@ function create():Void {
 				},
 				{
 					label: 'Save As...',
-					keybind: [FlxKey.CONTROL, FlxKey.SHIFT FlxKey.S],
+					keybind: [FlxKey.CONTROL, FlxKey.SHIFT, FlxKey.S],
 					onSelect: _save_as
 				},
 				null,
