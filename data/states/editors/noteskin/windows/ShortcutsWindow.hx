@@ -17,6 +17,10 @@ function postCreate():Void {
 		[
 			'Offsets:',
 			'Position:\n        Arrow Keys / Right Click + Drag\n        Hold Ctrl / Shift ~ Slower / Faster (x5 multi)',
+		],
+		[
+			'Downscroll:',
+			'TAB',
 		]
 	];
 	var textObjects:Array<UIText> = [];
