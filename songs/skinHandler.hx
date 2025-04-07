@@ -117,7 +117,7 @@ function postCreate():Void {
 
 	for (strumLine in strumLines) {
 		for (note in strumLine.notes) {
-			note.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
+			var animFunc = (name:String, forced:Bool, reversed:Bool, frame:Int) -> {
 				var skinData = noteSkinData.exists(note.extra.get('curSkin')) ? noteSkinData.get(note.extra.get('curSkin')) : null;
 				if (note.isSustainNote || skinData == null) {
 					note.frameOffset.set();
@@ -127,8 +127,9 @@ function postCreate():Void {
 					-skinData.offsets.note[0] * strumLine.strumScale,
 					-skinData.offsets.note[1] - (downscroll ? skinData.offsets.note[2] : 0) * strumLine.strumScale
 				);
-			});
-			note.animation.play(note.animation.name);
+			}
+			note.animation.onPlay.add(animFunc);
+			animFunc(note.animation.name, true, false, 0);
 		}
 		for (strum in strumLine.members) {
 			strum.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
