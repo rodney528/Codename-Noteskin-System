@@ -117,7 +117,7 @@ function postCreate():Void {
 
 	for (strumLine in strumLines) {
 		for (note in strumLine.notes) {
-			note.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
+			var animFunc = (name:String, forced:Bool, reversed:Bool, frame:Int) -> {
 				var skinData = noteSkinData.exists(note.extra.get('curSkin')) ? noteSkinData.get(note.extra.get('curSkin')) : null;
 				if (note.isSustainNote || skinData == null) {
 					note.frameOffset.set();
@@ -127,8 +127,9 @@ function postCreate():Void {
 					-skinData.offsets.note[0] * strumLine.strumScale,
 					-skinData.offsets.note[1] - (downscroll ? skinData.offsets.note[2] : 0) * strumLine.strumScale
 				);
-			});
-			note.animation.play(note.animation.name);
+			}
+			note.animation.onPlay.add(animFunc);
+			animFunc(note.animation.name, true, false, 0);
 		}
 		for (strum in strumLine.members) {
 			strum.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
@@ -164,9 +165,10 @@ function postCreate():Void {
  * A quick way to reload a note or strums skin. You can even change the skin in this still.
  * @param sprite The note or strum object itself.
  * @param strumLine The strumLine it's attached to.
+ * @param direction The direction ID.
  * @param skinName The name of the new skin.
  * @param isPixel Should it be pixel?
- * @return If true, the skin reloaded successfully.
+ * @return `Bool` ~ If true, the skin reloaded successfully.
  */
 public function reloadSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, ?skinName:String, ?isPixel = false):Bool {
 	if ((sprite is Note) || (sprite is Strum)) {
@@ -180,10 +182,12 @@ public function reloadSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, ?
  * Change the note or strum skin.
  * @param sprite The note or strum object itself.
  * @param strumLine The strumLine it's attached to.
+ * @param direction The direction ID.
  * @param skinName The name of the new skin.
  * @param isPixel Should it be pixel?
  * @param forceReload Force change the skin.
- * @return If true, the skin changed successfully.
+ * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
+ * @return `Bool` ~ If true, the skin changed successfully.
  */
 public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
 	isPixel ??= false;
