@@ -1,23 +1,29 @@
-import funkin.editors.extra.PropertyButton;
 import funkin.editors.ui.UIButton;
+import funkin.editors.ui.UICheckbox;
 import funkin.editors.ui.UIDropDown;
+import funkin.editors.ui.UINumericStepper;
 import funkin.editors.ui.UIText;
+import funkin.editors.ui.UITextBox;
 import funkin.game.SplashHandler;
+import options.type.NoteOption;
 
 var colonThree:UIText;
 
-var noteSkinDropdown:UIDropDown;
-var splashSkinDropdown:UIDropDown;
+var skinNameTextField:UITextBox;
+var imagePathTextField:UITextBox;
+var pixelForceDropDown:UIDropDown;
+var updateStrumCheck:UICheckbox;
+var splashOverrideTextField:UITextBox;
+var skinScaleStepper:UINumericStepper;
 
 var splashHandler:SplashHandler;
 var previewStrumLine:StrumLine;
 
-function skinNameHelper(name:String, ?splash:Bool = false):String {
-	splash ??= false;
-	return StringTools.replace(name, 'No Skin', 'default');
+function skinNameHelper(name:String):String {
+	return StringTools.replace(name, 'Default Skin', 'game/notes/default');
 }
-var noteSkinList:Array<String> = ['No Skin'];
-var splashSkinList:Array<String> = ['No Skin'];
+var noteSkinList:Array<String> = ['Default Skin'];
+var splashSkinList:Array<String> = ['Default Skin'];
 
 var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
@@ -34,13 +40,14 @@ var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:A
 	scale: 0.7
 }
 function getSkinPath(skin:String):String {
-	var data = noteSkinData.exists(skin) ? noteSkinData.get(skin) : null;
-	var texture:String = data != null ? data.texture : ('game/notes/' + skin);
-	return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
+	// var data = noteSkinData.exists(skin) ? noteSkinData.get(skin) : null;
+	// var texture:String = data != null ? data.texture : ('game/notes/' + skin);
+	// return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
+	return skin;
 }
 
 function create():Void {
-	winTitle = 'Editing skin parameters';
+	winTitle = 'Creating skin parameters';
 	winWidth = 500;
 	winHeight = 410;
 
@@ -58,7 +65,7 @@ function create():Void {
 		skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
 		skinData.scale ??= blankSkinData.scale;
 
-		noteSkinData.set(simpleName, skinData);
+		// noteSkinData.set(simpleName, skinData);
 		noteSkinList.push(simpleName);
 	}
 	for (file in Paths.getFolderContent(jsonPath)) {
@@ -77,7 +84,7 @@ function create():Void {
 			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
 			skinData.scale ??= blankSkinData.scale;
 
-			noteSkinData.set(simpleName, skinData);
+			// noteSkinData.set(simpleName, skinData);
 			noteSkinList.push(simpleName);
 		}
 	}
@@ -104,12 +111,26 @@ function postCreate():Void {
 		add(new UIText(ui.x, ui.y - 24, 0, text));
 
 	var title:UIText;
-	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Edit Character Skin', 28));
+	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Create Skin Json', 28));
 
-	add(noteSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, noteSkinList, noteSkinList.indexOf(_parentState.character.extra.exists('noteSkin') ? _parentState.character.extra.get('noteSkin') : 'No Skin')) ?? 0);
-	add(splashSkinDropdown = new UIDropDown(noteSkinDropdown.x, noteSkinDropdown.y + 65, 200, 32, splashSkinList, splashSkinList.indexOf(_parentState.character.extra.exists('splashSkin') ? _parentState.character.extra.get('splashSkin') : 'No Skin')) ?? 0);
-	addLabelOn(noteSkinDropdown, 'Note Skin');
-	addLabelOn(splashSkinDropdown, 'Splash Skin');
+	add(skinNameTextField = new UITextBox(title.x, title.y + 65, '', 170, 32));
+	add(imagePathTextField = new UITextBox(skinNameTextField.x, skinNameTextField.y + 65, 'game/notes/', 170, 32));
+	addLabelOn(skinNameTextField, 'Skin Name');
+	addLabelOn(imagePathTextField, 'Image Path');
+
+	add(pixelForceDropDown = new UIDropDown(imagePathTextField.x, imagePathTextField.y + 65, 200, 32, ['null', 'false', 'true'], 0));
+	addLabelOn(pixelForceDropDown, 'Is Pixel?');
+
+	add(splashOverrideTextField = new UITextBox(pixelForceDropDown.x + pixelForceDropDown.bWidth + 20, pixelForceDropDown.y, '', 170, 32));
+	addLabelOn(splashOverrideTextField, 'Splash Skin Override');
+
+	add(skinScaleStepper = new UINumericStepper(pixelForceDropDown.x, pixelForceDropDown.y + 65, 0.7, 1, 5, null, null, 170, 32));
+	addLabelOn(skinScaleStepper, 'Noteskin Scale');
+
+	add(updateStrumCheck = new UICheckbox(skinScaleStepper.x + skinScaleStepper.bWidth + 20, skinScaleStepper.y, 'canUpdateStrum', false));
+	addLabelOn(updateStrumCheck, 'Can update strum to note texture on hit?');
+	updateStrumCheck.x += 6;
+	updateStrumCheck.y += 4;
 
 	add(colonThree = new UIText(windowSpr.x + 25 + windowSpr.bWidth - 60, windowSpr.y, 0, ':3', 15, -1));
 	colonThree.y = windowSpr.y + ((30 - colonThree.height) / 2) - 2;
@@ -147,7 +168,7 @@ function postCreate():Void {
 		previewStrumLine.insert(babyArrow.ID = i, babyArrow);
 	}
 	for (i => strum in previewStrumLine.members) {
-		var skinName:String = skinNameHelper(noteSkinList[noteSkinDropdown.index]);
+		var skinName:String = 'game/notes/default';//skinNameHelper(noteSkinList[skinNameTextField.index]);
 		var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
 		changeSkin(strum, previewStrumLine, i, skinName, skinData.pixelEnforcement);
 		strum.playAnim('static');
@@ -157,20 +178,37 @@ function postCreate():Void {
 	splashHandler = new SplashHandler();
 	add(splashHandler);
 
-	noteSkinDropdown.onChange = (index:Int) -> {
-		for (i => strum in previewStrumLine.members) {
-			var skinName:String = skinNameHelper(noteSkinList[index]);
+	skinNameTextField.onChange = (text:String) -> {
+		/* for (i => strum in previewStrumLine.members) {
+			var skinName:String = text;//skinNameHelper(noteSkinList[index]);
 			var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
 			var prevAnim:String = strum.getAnim();
 			changeSkin(strum, previewStrumLine, i, skinName, skinData.pixelEnforcement);
 			strum.playAnim(prevAnim);
-
-			var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
-
-			var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
-			if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
-				skinName = skinData.splashOverride;
-
+		} */
+	}
+	imagePathTextField.onChange = (text:String) -> {
+		for (i => strum in previewStrumLine.members) {
+			var skinName:String = text;//skinNameHelper(noteSkinList[index]);
+			var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+			var pixel:Null<Bool> = pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true');
+			changeSkin(strum, previewStrumLine, i, skinName, pixel ?? checkFileExists('images/' + skinName + 'ENDS.png'), true);
+			strum.playAnim('static');
+		}
+	}
+	pixelForceDropDown.onChange = (index:Int) -> {
+		for (i => strum in previewStrumLine.members) {
+			var skinName:String = strum.extra.get('curSkin');//skinNameHelper(noteSkinList[index]);
+			var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+			var pixel:Null<Bool> = pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true');
+			changeSkin(strum, previewStrumLine, i, skinName, pixel ?? checkFileExists('images/' + skinName + 'ENDS.png'), true);
+			strum.playAnim('static');
+		}
+	}
+	splashOverrideTextField.onChange = (text:String) -> {
+		for (i => strum in previewStrumLine.members) {
+			var skinName:String = text;//skinNameHelper(splashSkinList[index]);
+			if (!checkFileExists('data/splashes/' + skinName + '.xml')) continue;
 			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
 			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
 			splashHandler.add(splash);
@@ -181,22 +219,20 @@ function postCreate():Void {
 			splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
 		}
 	}
-	splashSkinDropdown.onChange = (index:Int) -> {
+	skinScaleStepper.onChange = (text:String) -> {
+		skinScaleStepper.__onChange(text);
 		for (i => strum in previewStrumLine.members) {
-			var skinName:String = skinNameHelper(splashSkinList[index], true);
-			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
-			splashHandler.add(splash);
-			while (splashHandler.members.length > 8)
-				splashHandler.remove(splashHandler.members[0], true);
-
-			var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
-			splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
+			var skinName:String = strum.extra.get('curSkin');//skinNameHelper(noteSkinList[index]);
+			var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+			var pixel:Null<Bool> = pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true');
+			changeSkin(strum, previewStrumLine, i, skinName, pixel ?? checkFileExists('images/' + skinName + 'ENDS.png'), true);
+			strum.playAnim('static');
 		}
 	}
 
 	for (skin in splashSkinList) {
-		var skinName:String = skinNameHelper(skin, true);
+		var skinName:String = skin;//skinNameHelper(skin);
+		if (!checkFileExists('data/splashes/' + skinName + '.xml')) continue;
 		splashHandler.__grp = splashHandler.getSplashGroup(skinName);
 		var splash:FunkinSprite = splashHandler.__grp.showOnStrum(previewStrumLine.members[0]);
 		splashHandler.add(splash);
@@ -208,32 +244,25 @@ function postCreate():Void {
 	}
 
 	var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
-		if (_parentState?.customPropertiesButtonList != null) {
-			var list = _parentState.customPropertiesButtonList;
-
-			var makeNote:Bool = true;
-			var makeSplash:Bool = true;
-			for (button in list.buttons) {
-				if (button.propertyText.label.text == 'noteSkin') {
-					button.valueText.label.text = noteSkinList[noteSkinDropdown.index];
-					makeNote = false;
-				}
-				if (button.propertyText.label.text == 'splashSkin') {
-					button.valueText.label.text = splashSkinList[splashSkinDropdown.index];
-					makeSplash = false;
-				}
-			}
-			if (makeNote)
-				list.add(new PropertyButton('noteSkin', noteSkinList[noteSkinDropdown.index], list));
-			if (makeSplash)
-				list.add(new PropertyButton('splashSkin', splashSkinList[splashSkinDropdown.index], list));
-
-			// _parentState.saveCharacterInfo();
-		} /* else {
-			_parentState.editInfo();
-			_parentState.character.extra.set('noteSkin', noteSkinList[noteSkinDropdown.index]);
-			_parentState.character.extra.set('splashSkin', splashSkinList[splashSkinDropdown.index]);
-		} */
+		var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
+		var data;
+		CoolUtil.safeSaveFile(modRoot + 'data/notes/' + skinNameTextField.label.text + '.json', Json.stringify(data = {
+			texture: imagePathTextField.label.text,
+			pixelEnforcement: pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true'),
+			offsets: {
+				still: [0, 0, 0],
+				press: [0, 0, 0],
+				glow: [0, 0, 0],
+				note: [0, 0, 0]
+			},
+			canUpdateStrum: updateStrumCheck.checked,
+			splashOverride: checkFileExists('data/splashes/' + splashOverrideTextField.label.text + '.xml') ? splashOverrideTextField.label.text : '',
+			scale: skinScaleStepper.value
+		}, null, '\t'));
+		_parentState.main.add(new NoteOption(skinNameTextField.label.text, 'Image Path: "' + (StringTools.trim(data.texture) != '' && data.texture != null ? data.texture : 'game/notes/default') + '" | Is Pixel: ' + data.pixelEnforcement + ' | Can Update Strum: ' + data.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(data.splashOverride) != '' && data.splashOverride != null ? data.splashOverride : 'No Skin') + ' | Scale: ' + data.scale, () -> {
+			selectedSkin = skinNameTextField.label.text;
+			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
+		}, data));
 		close();
 	}, 125);
 	add(saveButton);
@@ -241,11 +270,11 @@ function postCreate():Void {
 	var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, 'Close', () -> close(), 125);
 	closeButton.color = FlxColor.RED;
 	add(closeButton);
-
-	add(new UIText(windowSpr.x + 10, closeButton.y - 140, winWidth - 10, 'Notes:\n\n    * Selecting "No Skin" is pretty self-explanatory. The character just doesn\'t get a set skin.\n\n    * Character skins take top priority when the game loads skin information!', 15, FlxColor.GRAY));
 }
 
 function update(elapsed:Float):Void {
+	if (state.currentFocus != null) return;
+
 	if (FlxG.keys.justPressed.TAB)
 		colonThree.visible = !colonThree.visible;
 
@@ -258,12 +287,8 @@ function update(elapsed:Float):Void {
 			} else {
 				strum.playAnim('confirm');
 
-				var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
-
-				var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
-				if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
-					skinName = skinData.splashOverride;
-
+				var skinName:String = splashOverrideTextField.label.text;
+				if (!checkFileExists('data/splashes/' + skinName + '.xml')) skinName = 'default';
 				splashHandler.__grp = splashHandler.getSplashGroup(skinName);
 				var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
 				splashHandler.add(splash);
@@ -308,7 +333,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'game/notes/default');
 		if (isPixel) {
 			if (sprite.isSustainNote) {
 				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
@@ -323,7 +348,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 				sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
 			}
 			loadAnimsThePixelWay(sprite, direction, strumLine.length);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinScaleStepper.value) * strumLine.strumScale));
 		} else {
 			sprite.frames = Paths.getFrames(theSkin);
 
@@ -338,7 +363,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 					sprite.animation.addByPrefix('hold', colors[fixedID] + ' hold piece', 24);
 					sprite.animation.addByPrefix('holdend', colors[fixedID] + ' hold end', 24);
 			}
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinScaleStepper.value) * strumLine.strumScale));
 		}
 		sprite.updateHitbox();
 		sprite.antialiasing = !isPixel;
@@ -352,14 +377,14 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 		if (skinName == null || isPixel == null)
 			return false;
 		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'game/notes/default');
 		if (isPixel) {
 			sprite.loadGraphic(Paths.image(theSkin));
 			sprite.width = sprite.width / 4;
 			sprite.height = sprite.height / 5;
 			sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
 			loadAnimsThePixelWay(sprite, direction, strumLine.length);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinScaleStepper.value) * strumLine.strumScale));
 		} else {
 			sprite.frames = Paths.getFrames(theSkin);
 			sprite.animation.addByPrefix('green', 'arrowUP', 24);
@@ -370,7 +395,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 			sprite.animation.addByPrefix('static', 'arrow' + animPrefix.toUpperCase(), 24);
 			sprite.animation.addByPrefix('pressed', animPrefix + ' press', 24, false);
 			sprite.animation.addByPrefix('confirm', animPrefix + ' confirm', 24, false);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
+			sprite.setGraphicSize(Std.int((sprite.width * skinScaleStepper.value) * strumLine.strumScale));
 
 			// chart editor preview only
 			sprite.animation.addByPrefix('note', ['purple', 'blue', 'green', 'red'][fixedID] + '0', 24);
