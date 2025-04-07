@@ -56,7 +56,7 @@ function create():Void {
 	winWidth = 500;
 	winHeight = 410;
 
-	var jsonPath:String = 'data/notes/';
+	var jsonPath:String = 'data/skins/';
 	for (file in CoolUtil.coolTextFile(jsonPath + 'list.txt')) {
 		var simpleName:String = file;
 		var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file + '.json'));

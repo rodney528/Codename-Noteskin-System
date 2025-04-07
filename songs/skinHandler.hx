@@ -25,7 +25,7 @@ public var songSkins:{note:String, splash:String} = {
 var allowCharSkins:Bool = SONG.meta.customValues?.charSkins ?? true;
 
 /**
- * Read the `readme.md` file in `data/notes/`!
+ * Read the `readme.md` file in `data/skins/`!
  */
 public var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 public var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
@@ -69,7 +69,7 @@ public function returnSkinMeta():Array<{note:String, splash:String}> {
 }
 
 function create():Void {
-	var jsonPath:String = 'data/notes/';
+	var jsonPath:String = 'data/skins/';
 	for (file in Paths.getFolderContent(jsonPath)) {
 		if (StringTools.endsWith(file, '.json')) {
 			var simpleName:String = StringTools.replace(file, '.json', '');
