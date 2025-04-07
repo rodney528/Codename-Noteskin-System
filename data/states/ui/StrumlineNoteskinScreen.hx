@@ -12,87 +12,15 @@ var splashSkinDropdown:UIDropDown;
 var splashHandler:SplashHandler;
 var previewStrumLine:StrumLine;
 
-function skinNameHelper(name:String, ?splash:Bool = false):String {
-	splash ??= false;
-	var result:String = StringTools.replace(name, 'Default Skin', 'default');
-	return StringTools.replace(result, 'Song Skin', splash ? (PlayState.SONG.meta.customValues?.splashSkin ?? 'default') : (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
-}
 var noteSkinList:Array<String> = ['Default Skin', 'Song Skin'];
 var splashSkinList:Array<String> = ['Default Skin', 'Song Skin'];
-
-var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
-var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
-	texture: null,
-	pixelEnforcement: false,
-	offsets: {
-		still: [0, 0, 0],
-		press: [0, 0, 0],
-		glow: [0, 0, 0],
-		note: [0, 0, 0]
-	},
-	canUpdateStrum: false,
-	splashOverride: '',
-	scale: 0.7
-}
-function getSkinPath(skin:String):String {
-	var data = noteSkinData.exists(skin) ? noteSkinData.get(skin) : null;
-	var texture:String = data != null ? data.texture : ('game/notes/' + skin);
-	return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
-}
-
-function returnSkinMeta():Array<{note:String, splash:String}> {
-	if (checkFileExists('songs/' + Charter.__song + '/skins.json')) {
-		return CoolUtil.parseJson(Paths.file('songs/' + Charter.__song + '/skins.json'));
-	} else {
-		return [
-			for (strumLine in Charter.instance.strumLines)
-				{note: 'Song Skin', splash: 'Song Skin'}
-		];
-	}
-}
 
 function create():Void {
 	winTitle = 'Editing skin parameters';
 	winWidth = 500;
 	winHeight = 410;
 
-	var jsonPath:String = 'data/skins/';
-	for (file in CoolUtil.coolTextFile(jsonPath + 'list.txt')) {
-		var simpleName:String = file;
-		var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file + '.json'));
-
-		if (skinData.texture == null && StringTools.trim(skinData.texture) == '')
-			skinData.texture = 'game/notes/' + simpleName;
-		skinData.texture ??= 'game/notes/' + simpleName;
-
-		skinData.pixelEnforcement ??= blankSkinData.pixelEnforcement;
-		skinData.offsets ??= blankSkinData.offsets;
-		skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
-		skinData.scale ??= blankSkinData.scale;
-
-		noteSkinData.set(simpleName, skinData);
-		noteSkinList.push(simpleName);
-	}
-	for (file in Paths.getFolderContent(jsonPath)) {
-		if (StringTools.endsWith(file, '.json')) {
-			var simpleName:String = StringTools.replace(file, '.json', '');
-			if (noteSkinList.contains(simpleName)) continue;
-
-			var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file));
-
-			if (skinData.texture == null && StringTools.trim(skinData.texture) == '')
-				skinData.texture = 'game/notes/' + simpleName;
-			skinData.texture ??= 'game/notes/' + simpleName;
-
-			skinData.pixelEnforcement ??= blankSkinData.pixelEnforcement;
-			skinData.offsets ??= blankSkinData.offsets;
-			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
-			skinData.scale ??= blankSkinData.scale;
-
-			noteSkinData.set(simpleName, skinData);
-			noteSkinList.push(simpleName);
-		}
-	}
+	SkinHandler.reloadSkinsMap(true, (name:String) -> noteSkinList.push(name));
 
 	var xmlPath:String = 'data/splashes/';
 	for (file in CoolUtil.coolTextFile(xmlPath + 'list.txt')) {
@@ -110,7 +38,6 @@ function create():Void {
 	}
 }
 
-var splashScales:Map<String, Float> = [];
 function postCreate():Void {
 	function addLabelOn(ui:UISprite, text:String)
 		add(new UIText(ui.x, ui.y - 24, 0, text));
@@ -118,7 +45,7 @@ function postCreate():Void {
 	var title:UIText;
 	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Edit Strumline Skin', 28));
 
-	var skinMeta = returnSkinMeta();
+	var skinMeta = SkinHandler.returnSkinMeta(Charter.__song, Charter.instance.strumLines.length);
 	add(noteSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, noteSkinList, noteSkinList.indexOf(skinMeta[_parentState.strumLineID].note)) ?? 1);
 	add(splashSkinDropdown = new UIDropDown(noteSkinDropdown.x, noteSkinDropdown.y + 65, 200, 32, splashSkinList, splashSkinList.indexOf(skinMeta[_parentState.strumLineID].splash)) ?? 1);
 	addLabelOn(noteSkinDropdown, 'Note Skin');
@@ -133,21 +60,42 @@ function postCreate():Void {
 	for (i in 0...4) {
 		var babyArrow:Strum = new Strum(previewStrumLine.startingPos.x + ((Note.swagWidth * previewStrumLine.strumScale) * i), previewStrumLine.startingPos.y);
 		babyArrow.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
-			var skinData = noteSkinData.exists(babyArrow.extra.get('curSkin')) ? noteSkinData.get(babyArrow.extra.get('curSkin')) : null;
-			if (skinData == null) {
+			var skinData = SkinHandler.getSkinData(babyArrow.extra.get('curSkin'), true);
+			if (skinData == null || skinData.offsets == null) {
 				babyArrow.frameOffset.set();
 				return;
 			}
-			switch (name) {
-				case 'note':
-					babyArrow.frameOffset.set(-skinData.offsets.note[0] * previewStrumLine.strumScale, -skinData.offsets.note[1] * previewStrumLine.strumScale);
-				case 'static':
-					babyArrow.frameOffset.set(-skinData.offsets.still[0] * previewStrumLine.strumScale, -skinData.offsets.still[1] * previewStrumLine.strumScale);
-				case 'pressed':
-					babyArrow.frameOffset.set(-skinData.offsets.press[0] * previewStrumLine.strumScale, -skinData.offsets.press[1] * previewStrumLine.strumScale);
-				case 'confirm':
-					babyArrow.frameOffset.set(-skinData.offsets.glow[0] * previewStrumLine.strumScale, -skinData.offsets.glow[1] * previewStrumLine.strumScale);
-			}
+			var offset:Array<Float> = skinData.offsets.global.copy();
+				switch (name) {
+					case 'note':
+						for (a in 0...3)
+							offset[a] += skinData.offsets.note[i][a] ?? 0;
+						babyArrow.frameOffset.set(
+							-offset[0] * previewStrumLine.strumScale,
+							-offset[1] * previewStrumLine.strumScale
+						);
+					case 'static':
+						for (a in 0...3)
+							offset[a] += skinData.offsets.still[i][a] ?? 0;
+						babyArrow.frameOffset.set(
+							-offset[0] * previewStrumLine.strumScale,
+							-offset[1] * previewStrumLine.strumScale
+						);
+					case 'pressed':
+						for (a in 0...3)
+							offset[a] += skinData.offsets.press[i][a] ?? 0;
+						babyArrow.frameOffset.set(
+							-offset[0] * previewStrumLine.strumScale,
+							-offset[1] * previewStrumLine.strumScale
+						);
+					case 'confirm':
+						for (a in 0...3)
+							offset[a] += skinData.offsets.glow[i][a] ?? 0;
+						babyArrow.frameOffset.set(
+							-offset[0] * previewStrumLine.strumScale,
+							-offset[1] * previewStrumLine.strumScale
+						);
+				}
 		});
 		babyArrow.animation.onFinish.add((name:String) -> {
 			switch (name) {
@@ -160,8 +108,8 @@ function postCreate():Void {
 		previewStrumLine.insert(babyArrow.ID = i, babyArrow);
 	}
 	for (i => strum in previewStrumLine.members) {
-		var skinName:String = skinNameHelper(noteSkinList[noteSkinDropdown.index]);
-		var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+		var skinName:String = SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index]);
+		var skinData = SkinHandler.getSkinData(skinName);
 		changeSkin(strum, previewStrumLine, i, skinName, skinData.pixelEnforcement);
 		strum.playAnim('static');
 	}
@@ -172,15 +120,15 @@ function postCreate():Void {
 
 	noteSkinDropdown.onChange = (index:Int) -> {
 		for (i => strum in previewStrumLine.members) {
-			var skinName:String = skinNameHelper(noteSkinList[index]);
-			var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+			var skinName:String = SkinHandler.skinNameHelper(noteSkinList[index]);
+			var skinData = SkinHandler.getSkinData(skinName);
 			var prevAnim:String = strum.getAnim();
 			changeSkin(strum, previewStrumLine, i, skinName, skinData.pixelEnforcement);
 			strum.playAnim(prevAnim);
 
-			var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
+			var skinName:String = SkinHandler.skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
 
-			var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
+			var skinData = SkinHandler.getSkinData(SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index]));
 			if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 				skinName = skinData.splashOverride;
 
@@ -190,39 +138,34 @@ function postCreate():Void {
 			while (splashHandler.members.length > 8)
 				splashHandler.remove(splashHandler.members[0], true);
 
-			var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
-			splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
+			splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
+			splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+			if (!splash.extra.exists('baseScale'))
+				splash.extra.set('baseScale', splash.scale.x);
+			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 		}
 	}
 	splashSkinDropdown.onChange = (index:Int) -> {
 		for (i => strum in previewStrumLine.members) {
-			var skinName:String = skinNameHelper(splashSkinList[index], true);
+			var skinName:String = SkinHandler.skinNameHelper(splashSkinList[index], true);
 			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
 			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
 			splashHandler.add(splash);
 			while (splashHandler.members.length > 8)
 				splashHandler.remove(splashHandler.members[0], true);
 
-			var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
-			splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
+			var skinData = SkinHandler.getSkinData(SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index]));
+			splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
+			splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+			if (!splash.extra.exists('baseScale'))
+				splash.extra.set('baseScale', splash.scale.x);
+			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 		}
-	}
-
-	for (skin in splashSkinList) {
-		var skinName:String = skinNameHelper(skin, true);
-		splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-		var splash:FunkinSprite = splashHandler.__grp.showOnStrum(previewStrumLine.members[0]);
-		splashHandler.add(splash);
-		while (splashHandler.members.length > 8)
-			splashHandler.remove(splashHandler.members[0], true);
-
-		splashScales.set(skinName, splash?.scale?.x ?? 1);
-		splash?.active = false;
 	}
 
 	var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
 		var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
-		var result = returnSkinMeta();
+		var result = SkinHandler.returnSkinMeta(Charter.__song, Charter.instance.strumLines.length);
 		result[_parentState.strumLineID].note = noteSkinList[noteSkinDropdown.index];
 		result[_parentState.strumLineID].splash = splashSkinList[splashSkinDropdown.index];
 		CoolUtil.safeSaveFile(modRoot + 'songs/' + Charter.__song + '/skins.json', Json.stringify(result, null, '\t'));
@@ -250,9 +193,9 @@ function update(elapsed:Float):Void {
 			} else {
 				strum.playAnim('confirm');
 
-				var skinName:String = skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
+				var skinName:String = SkinHandler.skinNameHelper(splashSkinList[splashSkinDropdown.index], true);
 
-				var skinData = noteSkinData.exists(skinNameHelper(noteSkinList[noteSkinDropdown.index])) ? noteSkinData.get(skinNameHelper(noteSkinList[noteSkinDropdown.index])) : blankSkinData;
+				var skinData = SkinHandler.getSkinData(SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index]));
 				if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 					skinName = skinData.splashOverride;
 
@@ -262,8 +205,11 @@ function update(elapsed:Float):Void {
 				while (splashHandler.members.length > 8)
 					splashHandler.remove(splashHandler.members[0], true);
 
-				var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
-				splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
+				splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
+				splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+				if (!splash.extra.exists('baseScale'))
+					splash.extra.set('baseScale', splash.scale.x);
+				splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 			}
 		}
 		if (release[i])
@@ -289,7 +235,7 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 	var fixedID:Int = direction % strumLine.length;
 	animPrefix ??= strumLine.strumAnimPrefix[fixedID];
 
-	var skinData = noteSkinData.exists(skinName) ? noteSkinData.get(skinName) : blankSkinData;
+	var skinData = SkinHandler.getSkinData(skinName);
 
 	if (sprite is Note) {
 		if (!forceReload)
@@ -297,8 +243,8 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 				return false;
 		if (skinName == null || isPixel == null)
 			return false;
-		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
+		var theSkin:String = SkinHandler.getSkinPath(skinName);
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = SkinHandler.getSkinPath(skinName = SkinHandler.getSongSkin());
 		if (isPixel) {
 			if (sprite.isSustainNote) {
 				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
@@ -341,8 +287,8 @@ function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName
 				return false;
 		if (skinName == null || isPixel == null)
 			return false;
-		var theSkin:String = getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = (PlayState.SONG.meta.customValues?.noteSkin ?? 'default'));
+		var theSkin:String = SkinHandler.getSkinPath(skinName);
+		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = SkinHandler.getSkinPath(skinName = SkinHandler.getSongSkin());
 		if (isPixel) {
 			sprite.loadGraphic(Paths.image(theSkin));
 			sprite.width = sprite.width / 4;
