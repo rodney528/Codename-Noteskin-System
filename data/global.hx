@@ -1,4 +1,4 @@
-import SkinManager;
+import backend.SkinManager;
 
 static var SkinHandler:SkinManager;
 

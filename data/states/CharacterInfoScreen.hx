@@ -1,4 +1,4 @@
-import funkin.editors.ui.UIButton;
+/* import funkin.editors.ui.UIButton;
 import funkin.editors.ui.UISubstateWindow;
 import funkin.editors.ui.UIText;
 
@@ -10,4 +10,4 @@ function postCreate():Void {
 	noteskinMenuButton.color = 0xFF00C8FF;
 	add(noteskinMenuButton);
 	addLabelOn(noteskinMenuButton, 'Character Skin');
-}
+} */
