@@ -1,7 +1,8 @@
 import backend.SkinManager;
+import funkin.backend.scripting.GlobalScript;
 
 static var SkinHandler:SkinManager;
 
-function new() {
-	SkinHandler = new SkinManager('default', 'default', true);
+static function initNoteskinSystem(?note:String, ?splash:String, ?chars:Bool) {
+	SkinHandler = new SkinManager(note ?? 'default', splash ?? 'default', chars ?? true);
 }

@@ -7,11 +7,11 @@ class SkinManager {
 	/**
 	 * Loaded skin data's.
 	 */
-	public var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
+	public var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 	/**
 	 * Blank skin data.
 	 */
-	public var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
+	public var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
 		texture: null,
 		pixelEnforcement: false,
 		offsets: {
@@ -45,7 +45,8 @@ class SkinManager {
 				[0, 0, 0],
 				[0, 0, 0],
 				[0, 0, 0],
-			]
+			],
+			splash: [0, 0, 0]
 		},
 		canUpdateStrum: false,
 		splashOverride: '',
@@ -124,15 +125,15 @@ class SkinManager {
 				for (i in 0...3)
 					offset[i] += skinData.offsets.tail[note.extra.get('visualIndex')][i];
 				note.frameOffset.set(
-					-offset[0] * strumLine.strumScale,
-					-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+					-offset[0],
+					-offset[1] - (downscroll ? offset[2] : 0)
 				);
 			} else {
 				for (i in 0...3)
 					offset[i] += skinData.offsets.note[noteData][i];
 				note.frameOffset.set(
-					-offset[0] * strumLine.strumScale,
-					-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+					-offset[0],
+					-offset[1] - (downscroll ? offset[2] : 0)
 				);
 			}
 		} : (strum:Strum, name:String, strumLine:StrumLine) -> {
@@ -147,22 +148,22 @@ class SkinManager {
 					for (i in 0...3)
 						offset[i] += offset[noteData][i];
 					strum.frameOffset.set(
-						-offset[0] * strumLine.strumScale,
-						-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+						-offset[0],
+						-offset[1] - (downscroll ? offset[2] : 0)
 					);
 				case 'pressed':
 					for (i in 0...3)
 						offset[i] += offset[noteData][i];
 					strum.frameOffset.set(
-						-offset[0] * strumLine.strumScale,
-						-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+						-offset[0],
+						-offset[1] - (downscroll ? offset[2] : 0)
 					);
 				case 'confirm':
 					for (i in 0...3)
 					offset[i] += skinData.offsets.glow[noteData][i];
 					strum.frameOffset.set(
-						-offset[0] * strumLine.strumScale,
-						-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+						-offset[0],
+						-offset[1] - (downscroll ? offset[2] : 0)
 					);
 			}
 		}

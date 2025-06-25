@@ -68,15 +68,15 @@ function postCreate():Void {
 					for (i in 0...3)
 						offset[i] += skinData.offsets.tail[note.noteData][i] ?? 0;
 					note.frameOffset.set(
-						-offset[0] * strumLine.strumScale,
-						0//-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+						-offset[0],
+						0//-offset[1] - (downscroll ? offset[2] : 0)
 					); // editing Y offset would do some wierd shit
 				} else {
 					for (i in 0...3)
 						offset[i] += skinData.offsets.note[note.noteData][i] ?? 0;
 					note.frameOffset.set(
-						-offset[0] * strumLine.strumScale,
-						-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+						-offset[0],
+						-offset[1] - (downscroll ? offset[2] : 0)
 					);
 				}
 			}
@@ -97,22 +97,22 @@ function postCreate():Void {
 						for (i in 0...3)
 							offset[i] += skinData.offsets.still[index][i] ?? 0;
 						strum.frameOffset.set(
-							-offset[0] * strumLine.strumScale,
-							-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+							-offset[0],
+							-offset[1] - (downscroll ? offset[2] : 0)
 						);
 					case 'pressed':
 						for (i in 0...3)
 							offset[i] += skinData.offsets.press[index][i] ?? 0;
 						strum.frameOffset.set(
-							-offset[0] * strumLine.strumScale,
-							-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+							-offset[0],
+							-offset[1] - (downscroll ? offset[2] : 0)
 						);
 					case 'confirm':
 						for (i in 0...3)
 							offset[i] += skinData.offsets.glow[index][i] ?? 0;
 						strum.frameOffset.set(
-							-offset[0] * strumLine.strumScale,
-							-offset[1] - (downscroll ? offset[2] : 0) * strumLine.strumScale
+							-offset[0],
+							-offset[1] - (downscroll ? offset[2] : 0)
 						);
 				}
 			}
@@ -404,11 +404,13 @@ function onPostGenerateStrums(event):Void {
 }
 
 function onNoteHit(event):Void {
+	var strum:Strum = event.note.strumLine.members[event.direction];
 	var strumLineSkin = SkinHandler.getSkinData(event.note.strumLine.extra.get('noteSkin'));
 	var skinData = SkinHandler.getSkinData(event.note.extra.get('curSkin'));
+	strum.extra.set('theSkinData', skinData); // jic
 
-	if (skinData.canUpdateStrum) reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
-	else reloadSkin(event.note.strumLine.members[event.direction], event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
+	if (skinData.canUpdateStrum) reloadSkin(strum, event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
+	else reloadSkin(strum, event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
 
 	if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 		event.note.splash = skinData.splashOverride;
@@ -423,8 +425,8 @@ function onNoteHit(event):Void {
 			splashHandler.remove(splashHandler.members[0], true);
 
 		// coolswag
-		splash.x += skinData.offsets.global[0] * event.note.strumLine.strumScale;
-		splash.y += skinData.offsets.global[1] * event.note.strumLine.strumScale;
+		splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * event.note.strumLine.strumScale;
+		splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * event.note.strumLine.strumScale;
 		if (!splash.extra.exists('baseScale'))
 			splash.extra.set('baseScale', splash.scale.x);
 		splash.scale.set(splash.extra.get('baseScale') * event.note.strumLine.strumScale, splash.extra.get('baseScale') * event.note.strumLine.strumScale);

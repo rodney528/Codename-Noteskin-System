@@ -70,29 +70,29 @@ function postCreate():Void {
 						for (a in 0...3)
 							offset[a] += skinData.offsets.note[i][a] ?? 0;
 						babyArrow.frameOffset.set(
-							-offset[0] * previewStrumLine.strumScale,
-							-offset[1] * previewStrumLine.strumScale
+							-offset[0],
+							-offset[1]
 						);
 					case 'static':
 						for (a in 0...3)
 							offset[a] += skinData.offsets.still[i][a] ?? 0;
 						babyArrow.frameOffset.set(
-							-offset[0] * previewStrumLine.strumScale,
-							-offset[1] * previewStrumLine.strumScale
+							-offset[0],
+							-offset[1]
 						);
 					case 'pressed':
 						for (a in 0...3)
 							offset[a] += skinData.offsets.press[i][a] ?? 0;
 						babyArrow.frameOffset.set(
-							-offset[0] * previewStrumLine.strumScale,
-							-offset[1] * previewStrumLine.strumScale
+							-offset[0],
+							-offset[1]
 						);
 					case 'confirm':
 						for (a in 0...3)
 							offset[a] += skinData.offsets.glow[i][a] ?? 0;
 						babyArrow.frameOffset.set(
-							-offset[0] * previewStrumLine.strumScale,
-							-offset[1] * previewStrumLine.strumScale
+							-offset[0],
+							-offset[1]
 						);
 				}
 		});
@@ -137,8 +137,8 @@ function postCreate():Void {
 			while (splashHandler.members.length > 8)
 				splashHandler.remove(splashHandler.members[0], true);
 
-			splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
-			splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+			splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
+			splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
 			if (!splash.extra.exists('baseScale'))
 				splash.extra.set('baseScale', splash.scale.x);
 			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
@@ -154,8 +154,8 @@ function postCreate():Void {
 				splashHandler.remove(splashHandler.members[0], true);
 
 			var skinData = SkinHandler.getSkinData(SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index], false, true));
-			splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
-			splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+			splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
+			splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
 			if (!splash.extra.exists('baseScale'))
 				splash.extra.set('baseScale', splash.scale.x);
 			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
@@ -225,8 +225,8 @@ function update(elapsed:Float):Void {
 				while (splashHandler.members.length > 8)
 					splashHandler.remove(splashHandler.members[0], true);
 
-				splash.x += skinData.offsets.global[0] * previewStrumLine.strumScale;
-				splash.y += skinData.offsets.global[1] * previewStrumLine.strumScale;
+				splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
+				splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
 				if (!splash.extra.exists('baseScale'))
 					splash.extra.set('baseScale', splash.scale.x);
 				splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
