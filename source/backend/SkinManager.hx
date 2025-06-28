@@ -1,3 +1,5 @@
+import Reflect;
+
 class SkinManager {
 	/**
 	 * The default skins.
@@ -77,6 +79,10 @@ class SkinManager {
 			skinData.offsets ??= blankSkinData.offsets;
 			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
 			skinData.scale ??= blankSkinData.scale;
+
+			for (property in ['global', 'still', 'press', 'glow', 'note', 'tail', 'splash'])
+				if (!Reflect.hasField(skinData.offsets, property))
+					Reflect.setProperty(skinData.offsets, property, [0, 0, 0]);
 
 			noteSkinData.set(simpleName, skinData);
 			_skinList.push(simpleName);
