@@ -80,9 +80,12 @@ class SkinManager {
 			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
 			skinData.scale ??= blankSkinData.scale;
 
-			for (property in ['global', 'still', 'press', 'glow', 'note', 'tail', 'splash'])
+			for (property in ['global', 'splash'])
 				if (!Reflect.hasField(skinData.offsets, property))
 					Reflect.setProperty(skinData.offsets, property, [0, 0, 0]);
+			for (property in ['still', 'press', 'glow', 'note', 'tail'])
+				if (!Reflect.hasField(skinData.offsets, property))
+					Reflect.setProperty(skinData.offsets, property, [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]);
 
 			noteSkinData.set(simpleName, skinData);
 			_skinList.push(simpleName);
