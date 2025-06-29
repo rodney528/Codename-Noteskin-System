@@ -419,7 +419,7 @@ function onNoteHit(event):Void {
 		event.showSplash = false;
 		splashHandler.__grp = splashHandler.getSplashGroup(event.note.splash);
 
-		var splash:FunkinSprite = splashHandler.__grp.showOnStrum(event.note.__strum);
+		var splash = splashHandler.__grp.showOnStrum(event.note.__strum ?? event.note.strumLine.members[event.direction]);
 		splashHandler.add(splash);
 		while (splashHandler.members.length > 8)
 			splashHandler.remove(splashHandler.members[0], true);
