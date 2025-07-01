@@ -408,9 +408,9 @@ function onPostGenerateStrums(event):Void {
 
 function onNoteHit(event):Void {
 	var strum:Strum = event.note.strumLine.members[event.direction];
-	var strumLineSkin = SkinHandler.getSkinData(event.note.strumLine.extra.get('noteSkin'));
-	var skinData = SkinHandler.getSkinData(event.note.extra.get('curSkin'));
-	strum.extra.set('noteSkinData', event.note.extra.get('theSkinData')); // jic
+	var strumLineSkin = event.note.strumLine.extra.get('theSkinData');
+	var skinData = event.note.extra.get('theSkinData');
+	strum.extra.set('noteSkinData', skinData); // jic
 
 	if (skinData.canUpdateStrum) reloadSkin(strum, event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
 	else reloadSkin(strum, event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
