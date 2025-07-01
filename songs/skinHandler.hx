@@ -439,4 +439,5 @@ public function spawnSplash(note:Note):FunkinSprite {
 	if (!splash.extra.exists('baseScale'))
 		splash.extra.set('baseScale', splash.scale.x);
 	splash.scale.set(splash.extra.get('baseScale') * note.strumLine.strumScale, splash.extra.get('baseScale') * note.strumLine.strumScale);
+	return splash;
 }
