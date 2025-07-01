@@ -44,6 +44,7 @@ function create():Void {
 		strumLine.extra.set('noteSkin', skinName);
 		strumLine.extra.set('splashSkin', splashName);
 		strumLine.extra.set('isPixel', skinData.pixelEnforcement ?? false);
+		strumLine.extra.set('theSkinData', skinData);
 	}
 }
 
@@ -58,7 +59,7 @@ function postCreate():Void {
 	for (strumLine in strumLines) {
 		for (note in strumLine.notes) {
 			var offsetFunc = (name:String) -> {
-				var skinData = SkinHandler.getSkinData(note.extra.get('curSkin'), true);
+				var skinData = note.extra.get('theSkinData');
 				if (skinData == null || skinData.offsets == null) {
 					note.frameOffset.set();
 					return;
@@ -86,7 +87,7 @@ function postCreate():Void {
 		}
 		for (index => strum in strumLine.members) {
 			var offsetFunc = (name:String) -> {
-				var skinData = SkinHandler.getSkinData(strum.extra.get('curSkin'), true);
+				var skinData = strum.extra.get('theSkinData');
 				if (skinData == null || skinData.offsets == null) {
 					strum.frameOffset.set();
 					return;
@@ -159,7 +160,7 @@ public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, s
 	animPrefix ??= strumLine.strumAnimPrefix[fixedID];
 
 	if (sprite is Note) {
-		var skinData = SkinHandler.getSkinData(sprite.extra.get('curSkin'));
+		var skinData = SkinHandler.getSkinData(skinName);
 		if (!forceReload)
 			if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
 				return false;
@@ -203,8 +204,9 @@ public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, s
 		sprite.extra.set('curSkin', skinName);
 		sprite.extra.set('visualIndex', direction);
 		sprite.extra.set('isPixel', isPixel);
+		sprite.extra.set('theSkinData', skinData);
 	} else if (sprite is Strum) {
-		var skinData = SkinHandler.getSkinData(sprite.extra.get('curSkin'));
+		var skinData = SkinHandler.getSkinData(skinName);
 		if (!forceReload)
 			if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
 				return false;
@@ -236,6 +238,7 @@ public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, s
 		sprite.extra.set('curSkin', skinName);
 		sprite.extra.set('visualIndex', direction);
 		sprite.extra.set('isPixel', isPixel);
+		sprite.extra.set('theSkinData', skinData);
 	} else {
 		trace('Only Note\'s and Strum\'s please.');
 		return false;
@@ -407,7 +410,7 @@ function onNoteHit(event):Void {
 	var strum:Strum = event.note.strumLine.members[event.direction];
 	var strumLineSkin = SkinHandler.getSkinData(event.note.strumLine.extra.get('noteSkin'));
 	var skinData = SkinHandler.getSkinData(event.note.extra.get('curSkin'));
-	strum.extra.set('theSkinData', skinData); // jic
+	strum.extra.set('noteSkinData', event.note.extra.get('theSkinData')); // jic
 
 	if (skinData.canUpdateStrum) reloadSkin(strum, event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
 	else reloadSkin(strum, event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
