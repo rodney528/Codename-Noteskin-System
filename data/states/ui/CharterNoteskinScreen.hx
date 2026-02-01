@@ -193,8 +193,8 @@ function update(elapsed:Float):Void {
 	if (FlxG.keys.justPressed.TAB)
 		colonThree.visible = !colonThree.visible;
 
-	var press:Array<Int> = [controls.LEFT_P, controls.DOWN_P, controls.UP_P, controls.RIGHT_P];
-	var release:Array<Int> = [controls.LEFT_R, controls.DOWN_R, controls.UP_R, controls.RIGHT_R];
+	var press:Array<Int> = [controls.NOTE_LEFT_P, controls.NOTE_DOWN_P, controls.NOTE_UP_P, controls.NOTE_RIGHT_P];
+	var release:Array<Int> = [controls.NOTE_LEFT_R, controls.NOTE_DOWN_R, controls.NOTE_UP_R, controls.NOTE_RIGHT_R];
 	for (i => strum in previewStrumLine.members) {
 		if (press[i]) {
 			if (colonThree.visible) {
@@ -233,10 +233,12 @@ function checkFileExists(path:String):Bool
  * Change the note or strum skin.
  * @param sprite The note or strum object itself.
  * @param strumLine The strumLine it's attached to.
+ * @param direction The direction ID.
  * @param skinName The name of the new skin.
  * @param isPixel Should it be pixel?
  * @param forceReload Force change the skin.
- * @return If true, the skin changed successfully.
+ * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
+ * @return `Bool` ~ If true, the skin changed successfully.
  */
 function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
 	isPixel ??= false;
