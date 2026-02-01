@@ -2,7 +2,7 @@
 
 import flixel.effects.FlxFlicker;
 import funkin.backend.MusicBeatState;
-import funkin.editors.EditorTreeMenu;
+import funkin.editors.EditorTreeMenu.EditorTreeMenuScreen;
 
 var skinIndex:Int;
 function create():Void {
@@ -22,8 +22,8 @@ function update(elapsed:Float):Void {
 	if (curSelected == skinIndex && selected && FlxFlicker.isFlickering(sprites[skinIndex].label)) {
 		FlxFlicker._boundObjects[sprites[skinIndex].label].completionCallback = (_) -> {
 			subCam.fade(0xFF000000, 0.25, false, () -> {
-				var state:EditorTreeMenu = new EditorTreeMenu();
-				MusicBeatState.lastScriptName = state.scriptName = 'editors/noteskin/selector/SkinList';
+				var state:EditorTreeMenuScreen = new EditorTreeMenuScreen();
+				MusicBeatState.lastScriptName = 'editors/noteskin/selector/SkinList';
 				FlxG.switchState(state);
 			});
 		}

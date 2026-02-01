@@ -4,8 +4,9 @@ class NoteOption extends TextOption {
 	public var note:FunkinSprite;
 	public var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float};
 
-	override public function new(text:String, desc:String, selectCallback:Void->Void, data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}) {
+	override public function new(text:String, data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}, selectCallback:Void->Void) {
 		skinData = data;
+		super(text, 'Image Path: "' + (StringTools.trim(skinData.texture) != '' && skinData.texture != null ? skinData.texture : 'game/notes/default') + '" | Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, selectCallback);
 		note = new FunkinSprite();
 		changeSkin(note, FlxG.random.int(0, 3), text, skinData.pixelEnforcement, true);
 		note.animation.play('scroll');

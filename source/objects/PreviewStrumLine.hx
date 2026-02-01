@@ -22,10 +22,14 @@ class PreviewStrumLine extends MusicBeatGroup {
 		scale: 0.7
 	}
 
-	public function new(_,_,_, ?x:Float = 0.5, ?y:Float = 50, skin:String, data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}, ?size:Float) {
-		strumLine = new StrumLine([], FlxPoint.get((FlxG.width * (x ??= 0.5)) - ((Note.swagWidth * (size ??= 1)) * 2), y ??= 50), size ??= 1, true, true, PlayerSettings.solo.controls);
-		this.skin = (skin ??= this.skin);
-		this.data = (data ??= this.data);
+	public function new(?x:Float, ?y:Float, skin:String, data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}, ?size:Float) {
+		x ??= 0.5;
+		y ??= 50;
+		size ??= 1;
+		super();
+		strumLine = new StrumLine([], FlxPoint.get((FlxG.width * x) - ((Note.swagWidth * size) * 2), y), size, true, true, PlayerSettings.solo.controls);
+		this.skin = skin ??= this.skin;
+		this.data = data ??= this.data;
 
 		for (i in 0...4) {
 			var babyArrow:Strum = new Strum(strumLine.startingPos.x + ((Note.swagWidth * strumLine.strumScale) * i), strumLine.startingPos.y);

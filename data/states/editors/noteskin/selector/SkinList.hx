@@ -1,7 +1,7 @@
 import funkin.backend.system.framerate.Framerate;
+import funkin.editors.EditorTreeMenu.EditorTreeMenuScreen;
 import funkin.editors.ui.UIState;
 import funkin.editors.ui.UISubstateWindow;
-import funkin.options.OptionsScreen;
 import funkin.options.type.NewOption;
 import funkin.options.type.OptionType;
 import options.type.NoteOption;
@@ -27,7 +27,7 @@ var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:A
 function create():Void {
 	var noteOptions:Array<OptionType> = [];
 
-	var jsonPath:String = 'data/notes/';
+	var jsonPath:String = 'data/skins/';
 	for (file in CoolUtil.coolTextFile(jsonPath + 'list.txt')) {
 		var simpleName:String = file;
 		var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file + '.json'));
@@ -43,10 +43,10 @@ function create():Void {
 
 		noteSkinData.set(simpleName, skinData);
 		noteSkinList.push(simpleName);
-		noteOptions.push(new NoteOption(simpleName, 'Image Path: "' + (StringTools.trim(skinData.texture) != '' && skinData.texture != null ? skinData.texture : 'game/notes/default') + '" | Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () -> {
+		noteOptions.push(new NoteOption(simpleName, skinData, () -> {
 			selectedSkin = simpleName;
 			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
-		}, skinData));
+		}));
 	}
 	for (file in Paths.getFolderContent(jsonPath)) {
 		if (StringTools.endsWith(file, '.json')) {
@@ -66,10 +66,10 @@ function create():Void {
 
 			noteSkinData.set(simpleName, skinData);
 			noteSkinList.push(simpleName);
-			noteOptions.push(new NoteOption(simpleName, 'Image Path: "' + (StringTools.trim(skinData.texture) != '' && skinData.texture != null ? skinData.texture : 'game/notes/default') + '" | Is Pixel: ' + skinData.pixelEnforcement + ' | Can Update Strum: ' + skinData.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(skinData.splashOverride) != '' && skinData.splashOverride != null ? skinData.splashOverride : 'No Skin') + ' | Scale: ' + skinData.scale, () -> {
+			noteOptions.push(new NoteOption(simpleName, skinData, () -> {
 				selectedSkin = simpleName;
 				FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
-			}, skinData));
+			}));
 		}
 	}
 
@@ -77,7 +77,7 @@ function create():Void {
 		openSubState(new UISubstateWindow(true, 'editors/noteskin/selector/NewSkin'))
 	));
 
-	main = new OptionsScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);
+	main = new EditorTreeMenuScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);
 	main.changeSelection(1);
 	bgType = 'charter';
 

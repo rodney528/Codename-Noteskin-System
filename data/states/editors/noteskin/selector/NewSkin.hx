@@ -51,7 +51,7 @@ function create():Void {
 	winWidth = 500;
 	winHeight = 410;
 
-	var jsonPath:String = 'data/notes/';
+	var jsonPath:String = 'data/skins/';
 	for (file in CoolUtil.coolTextFile(jsonPath + 'list.txt')) {
 		var simpleName:String = file;
 		var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file + '.json'));
@@ -246,7 +246,7 @@ function postCreate():Void {
 	var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
 		var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
 		var data;
-		CoolUtil.safeSaveFile(modRoot + 'data/notes/' + skinNameTextField.label.text + '.json', Json.stringify(data = {
+		CoolUtil.safeSaveFile(modRoot + 'data/skins/' + skinNameTextField.label.text + '.json', Json.stringify(data = {
 			texture: imagePathTextField.label.text,
 			pixelEnforcement: pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true'),
 			offsets: {

@@ -89,16 +89,16 @@ function create():Void {
 	topMenuSpr.cameras = [uiCamera];
 	add(topMenuSpr);
 
-	var defaultData = CoolUtil.parseJson(Paths.file('data/notes/default.json'));
-	var skinExists:Bool = Assets.exists(Paths.file('data/notes/' + selectedSkin + '.json'));
-	var editData = skinExists ? CoolUtil.parseJson(Paths.file('data/notes/' + selectedSkin + '.json')) : defaultData;
+	var defaultData = CoolUtil.parseJson(Paths.file('data/skins/default.json'));
+	var skinExists:Bool = Assets.exists(Paths.file('data/skins/' + selectedSkin + '.json'));
+	var editData = skinExists ? CoolUtil.parseJson(Paths.file('data/skins/' + selectedSkin + '.json')) : defaultData;
 	if (!skinExists) {
 		trace('Skin json"' + selectedSkin + '" does not exist, loading default instead.');
 		selectedSkin = 'default';
 	}
 
-	ghostStrumLine = new PreviewStrumLine(0,0,0, 0.5, FlxG.height / 2 - (Note.swagWidth / 2), 'default', defaultData);
-	strumLine = new PreviewStrumLine(0,0,0, 0.5, FlxG.height / 2 - (Note.swagWidth / 2), selectedSkin, editData);
+	ghostStrumLine = new PreviewStrumLine(0.5, FlxG.height / 2 - (Note.swagWidth / 2), 'default', defaultData);
+	strumLine = new PreviewStrumLine(0.5, FlxG.height / 2 - (Note.swagWidth / 2), selectedSkin, editData);
 	add(ghostStrumLine);
 	add(strumLine);
 
@@ -122,7 +122,7 @@ function destroy():Void {
 function _save(_):Void {
 	#if sys
 	var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
-	// CoolUtil.safeSaveFile(modRoot + 'data/notes/' + 'temp' + '.json', Json.stringify('', null, '\t'));
+	// CoolUtil.safeSaveFile(modRoot + 'data/skins/' + 'temp' + '.json', Json.stringify('', null, '\t'));
 	// undos.save();
 	return;
 	#end
