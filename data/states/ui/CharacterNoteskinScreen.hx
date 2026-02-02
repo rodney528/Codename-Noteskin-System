@@ -1,3 +1,4 @@
+import funkin.backend.system.Flags;
 import funkin.editors.extra.PropertyButton;
 import funkin.editors.ui.UIButton;
 import funkin.editors.ui.UIDropDown;
@@ -58,6 +59,7 @@ function postCreate():Void {
 	previewStrumLine = new StrumLine([], FlxPoint.get(220, 125), 0.55, true, true, controls, '');
 	for (i in 0...4) {
 		var babyArrow:Strum = new Strum(previewStrumLine.startingPos.x + ((Note.swagWidth * previewStrumLine.strumScale) * i), previewStrumLine.startingPos.y);
+		babyArrow.strumLine = previewStrumLine;
 		babyArrow.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
 			var skinData = SkinHandler.getSkinData(babyArrow.extra.get('curSkin'), true);
 			if (skinData == null || skinData.offsets == null) {
@@ -131,34 +133,26 @@ function postCreate():Void {
 			if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 				skinName = skinData.splashOverride;
 
-			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
+			var splash:FunkinSprite = splashHandler.getSplashGroup(skinName).showOnStrum(strum);
 			splashHandler.add(splash);
-			while (splashHandler.members.length > 8)
+			while (splashHandler.length > Flags.MAX_SPLASHES)
 				splashHandler.remove(splashHandler.members[0], true);
 
 			splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
 			splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
-			if (!splash.extra.exists('baseScale'))
-				splash.extra.set('baseScale', splash.scale.x);
-			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 		}
 	}
 	splashSkinDropdown.onChange = (index:Int) -> {
 		for (i => strum in previewStrumLine.members) {
 			var skinName:String = SkinHandler.skinNameHelper(splashSkinList[index], true, true);
-			splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
+			var splash:FunkinSprite = splashHandler.getSplashGroup(skinName).showOnStrum(strum);
 			splashHandler.add(splash);
-			while (splashHandler.members.length > 8)
+			while (splashHandler.length > Flags.MAX_SPLASHES)
 				splashHandler.remove(splashHandler.members[0], true);
 
 			var skinData = SkinHandler.getSkinData(SkinHandler.skinNameHelper(noteSkinList[noteSkinDropdown.index], false, true));
 			splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
 			splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
-			if (!splash.extra.exists('baseScale'))
-				splash.extra.set('baseScale', splash.scale.x);
-			splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 		}
 	}
 
@@ -219,17 +213,13 @@ function update(elapsed:Float):Void {
 				if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
 					skinName = skinData.splashOverride;
 
-				splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-				var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strum);
+				var splash:FunkinSprite = splashHandler.getSplashGroup(skinName).showOnStrum(strum);
 				splashHandler.add(splash);
-				while (splashHandler.members.length > 8)
+				while (splashHandler.length > Flags.MAX_SPLASHES)
 					splashHandler.remove(splashHandler.members[0], true);
 
 				splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * previewStrumLine.strumScale;
 				splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * previewStrumLine.strumScale;
-				if (!splash.extra.exists('baseScale'))
-					splash.extra.set('baseScale', splash.scale.x);
-				splash.scale.set(splash.extra.get('baseScale') * previewStrumLine.strumScale, splash.extra.get('baseScale') * previewStrumLine.strumScale);
 			}
 		}
 		if (release[i])
