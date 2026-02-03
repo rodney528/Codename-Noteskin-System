@@ -1,0 +1,74 @@
+<!DOCTYPE codename-engine-arrowskin>
+<arrowskin sprite="game/notes/default">
+	<strums>
+		<mania count="4">
+			<set id="0">
+				<anim name="static" anim="arrowLEFT"/>
+				<anim name="pressed" anim="left press"/>
+				<anim name="confirm" anim="left confirm"/>
+			</set>
+
+			<set id="1">
+				<anim name="static" anim="arrowDOWN"/>
+				<anim name="pressed" anim="down press"/>
+				<anim name="confirm" anim="down confirm"/>
+			</set>
+
+			<set id="2">
+				<anim name="static" anim="arrowUP"/>
+				<anim name="pressed" anim="up press"/>
+				<anim name="confirm" anim="up confirm"/>
+			</set>
+
+			<set id="2">
+				<anim name="static" anim="arrowRIGHT"/>
+				<anim name="pressed" anim="right press"/>
+				<anim name="confirm" anim="right confirm"/>
+			</set>
+		</mania>
+	</strums>
+
+	<notes>
+		<mania count="4">
+			<set id="0">
+				<anim name="scroll" anim="purple0"/>
+			</set>
+
+			<set id="1">
+				<anim name="scroll" anim="blue0"/>
+			</set>
+
+			<set id="2">
+				<anim name="scroll" anim="green0"/>
+			</set>
+
+			<set id="3">
+				<anim name="scroll" anim="red0"/>
+			</set>
+		</mania>
+	</notes>
+
+	<sustains>
+		<mania count="4">
+			<set id="0">
+				<anim name="hold" anim="purple hold piece"/>
+				<anim name="holdend" anim="pruple end hold"/>
+			</set>
+
+			<set id="1">
+				<anim name="hold" anim="blue hold piece"/>
+				<anim name="holdend" anim="blue hold end"/>
+			</set>
+
+			<set id="2">
+				<anim name="hold" anim="green hold piece"/>
+				<anim name="holdend" anim="green hold end"/>
+			</set>
+
+			<set id="3">
+				<anim name="hold" anim="red hold piece"/>
+				<anim name="holdend" anim="red hold end"/>
+			</set>
+		</mania>
+	</sustains>
+</arrowskin>
