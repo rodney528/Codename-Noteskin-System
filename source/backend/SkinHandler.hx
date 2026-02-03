@@ -1,3 +1,4 @@
+import Xml;
 import backend.SkinType;
 import funkin.backend.system.Flags;
 
@@ -6,92 +7,30 @@ class SkinHandler {
 	 * The default skins.
 	 */
 	public static var defaultSkins = {arrow: 'default', splash: 'default', covers: 'default'}
+	public static var defaultCharSkin:Bool = true;
 
 	/**
 	 * Loaded skin data's.
 	 */
-	public static var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
-	/**
-	 * Blank skin data.
-	 */
-	public static var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
-		texture: null,
-		pixelEnforcement: false,
-		offsets: {
-			global: [0, 0, 0],
-			still: [
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-			],
-			press: [
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-			],
-			glow: [
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-			],
-			note: [
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-			],
-			tail: [
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-				[0, 0, 0],
-			],
-			splash: [0, 0, 0]
-		},
-		canUpdateStrum: false,
-		splashOverride: '',
-		scale: 0.7
-	}
+	public static var noteSkinData:Map<String, Xml> = [];
 
 	/**
 	 * Get's skin data.
 	 * @param name Skin key name.
 	 * @param ifBlankThenNull If true, then if said key doesn't exist then it returns null instead of blank data.
 	 */
-	public static function getSkinData(name:String, ?ifBlankThenNull:Bool):{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} {
+	public static function getSkinData(name:String, ?ifBlankThenNull:Bool):Xml {
 		ifBlankThenNull ??= false;
-		return noteSkinData.exists(name) ? noteSkinData.get(name) : (ifBlankThenNull ? null : blankSkinData);
+		return noteSkinData.exists(name) ? noteSkinData.get(name) : (ifBlankThenNull ? null : noteSkinData.get('default'));
 	}
 
 	static var _skinList:Array<String> = [];
 	static function _reload(name:String, onEachFinish:String->Void):Void {
-		var simpleName:String = name;
-		if (!_skinList.contains(simpleName)) {
-			var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file('data/skins/' + simpleName + '.json'));
-
-			if (skinData.texture == null && StringTools.trim(skinData.texture) == '')
-				skinData.texture = 'game/notes/' + simpleName;
-			skinData.texture ??= 'game/notes/' + simpleName;
-
-			skinData.pixelEnforcement ??= blankSkinData.pixelEnforcement;
-			skinData.offsets ??= blankSkinData.offsets;
-			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
-			skinData.scale ??= blankSkinData.scale;
-
-			for (property in ['global', 'splash'])
-				if (!Reflect.hasField(skinData.offsets, property))
-					Reflect.setProperty(skinData.offsets, property, [0, 0, 0]);
-			for (property in ['still', 'press', 'glow', 'note', 'tail'])
-				if (!Reflect.hasField(skinData.offsets, property))
-					Reflect.setProperty(skinData.offsets, property, [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]);
-
-			noteSkinData.set(simpleName, skinData);
-			_skinList.push(simpleName);
+		if (!_skinList.contains(name)) {
+			noteSkinData.set(name, Xml.parse(Assets.getText(Paths.xml('skins/' + name))).firstElement());
+			_skinList.push(name);
 			if (onEachFinish != null)
-				onEachFinish(simpleName);
+				onEachFinish(name);
 		}
 	}
 	/**
@@ -105,8 +44,8 @@ class SkinHandler {
 			for (file in CoolUtil.coolTextFile('data/skins/list.txt'))
 				_reload(file, onEachFinish);
 		for (file in Paths.getFolderContent('data/skins/'))
-			if (StringTools.endsWith(file, '.json'))
-				_reload(StringTools.replace(file, '.json', ''), onEachFinish);
+			if (StringTools.endsWith(file, '.xml'))
+				_reload(StringTools.replace(file, '.xml', ''), onEachFinish);
 	}
 	public static function getSongSkin(?type:String):String {
 		var toReplace, replacer:String;
@@ -126,65 +65,6 @@ class SkinHandler {
 		toReplace ??= 'Default Skin'; replacer ??= 'Song Skin';
 		return StringTools.replace(toReplace, 'Default Skin', replacer);
 	}
-
-	public static var defaultAllowCharSkin:Bool = true;
-
-	/* public static function getSetOffsetFunc(?isNote:Bool):(Dynamic, String, StrumLine)->Void {
-		isNote ??= false;
-		return isNote ? (note:Note, name:String, strumLine:StrumLine) -> {
-			var skinData = getSkinData(note.extra.get('curSkin'), true);
-			if (skinData == null) {
-				note.frameOffset.set();
-				return;
-			}
-			var offset:Array<Float> = skinData.offsets.global.copy();
-			if (note.isSustainNote) {
-				for (i in 0...3)
-					offset[i] += skinData.offsets.tail[note.extra.get('visualIndex')][i];
-				note.frameOffset.set(
-					-offset[0],
-					-offset[1] - (downscroll ? offset[2] : 0)
-				);
-			} else {
-				for (i in 0...3)
-					offset[i] += skinData.offsets.note[noteData][i];
-				note.frameOffset.set(
-					-offset[0],
-					-offset[1] - (downscroll ? offset[2] : 0)
-				);
-			}
-		} : (strum:Strum, name:String, strumLine:StrumLine) -> {
-			var skinData = getSkinData(note.extra.get('curSkin'), true);
-			if (skinData == null) {
-				strum.frameOffset.set();
-				return;
-			}
-			var offset:Array<Float> = skinData.offsets.global.copy();
-			switch (name) {
-				case 'static':
-					for (i in 0...3)
-						offset[i] += offset[noteData][i];
-					strum.frameOffset.set(
-						-offset[0],
-						-offset[1] - (downscroll ? offset[2] : 0)
-					);
-				case 'pressed':
-					for (i in 0...3)
-						offset[i] += offset[noteData][i];
-					strum.frameOffset.set(
-						-offset[0],
-						-offset[1] - (downscroll ? offset[2] : 0)
-					);
-				case 'confirm':
-					for (i in 0...3)
-					offset[i] += skinData.offsets.glow[noteData][i];
-					strum.frameOffset.set(
-						-offset[0],
-						-offset[1] - (downscroll ? offset[2] : 0)
-					);
-			}
-		}
-	} */
 
 	/**
 	 * Returns the noteskin path.

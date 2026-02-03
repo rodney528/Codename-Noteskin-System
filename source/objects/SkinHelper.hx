@@ -1,3 +1,4 @@
+import Xml;
 import backend.SkinHandler;
 
 class SkinHelper {
@@ -54,10 +55,40 @@ class SkinHelper {
 			skin = StringTools.replace(skin, 'Parent Skin', parent.strumLine.extra.get('arrowSkin') ?? 'Song Skin');
 			return SkinHandler.skinNameHelper(skin, SkinType.ARROW);
 		}
-		var skin:String = getName(); var skinPath:String = SkinHandler.getSkinPath(skin);
-		if (PlayState.instance != null)
-			PlayState.instance.graphicCache.cache(Paths.getPath('images/' + skinPath) + '.png');
-		frames = Paths.getFrames(skinPath);
+		var skin:String = getName();
+		var access:Xml = SkinHandler.getSkinData(skin);
+		var skinPath:Null<String> = access.get('sprite');
+		if (skinPath != null) state.graphicCache.cache(Paths.image(skinPath));
+		for (part in access.elements())
+			if (part.nodeName == parentType + 's') {
+				var partPath:String = part.get('sprite');
+				if (partPath != null) state.graphicCache.cache(Paths.image(partPath));
+				frames = Paths.getFrames(partPath ?? skinPath);
+				for (mania in part.elements())
+					if (Std.parseInt(mania.get('count')) == parent.strumLine.data.keyCount) {
+						for (set in mania.elements()) {
+							var id:Int = switch (parentType) {
+								case 'strum': parent.ID;
+								case 'note' | 'sustain': parent.noteData;
+							}
+							if (Std.parseInt(set.get('id')) == id) {
+								for (anim in set.elements()) {
+									// if (anim.nodeName != 'anim') continue;
+									XMLUtil.addXMLAnimation(parent, anim);
+									parent.animation.play(anim.get('name'));
+								}
+								break;
+							}
+						}
+						break;
+					}
+				break;
+			}
+		var targetScale:Float = Std.parseFloat(access.get('scale') ?? '0.7');
+		parent.scale.set(targetScale, targetScale);
+		parent.updateHitbox();
+		parent.antialiasing = (access.get('pixel') ?? 'false') == 'false';
+
 		if (parentType == 'note' && effectTail ?? false)
 			sustainLoop(parent, sustain -> sustain.extra.get('skinHandler').reloadSkin(), true);
 
