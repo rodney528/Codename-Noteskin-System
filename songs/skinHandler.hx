@@ -1,443 +1,77 @@
-function checkFileExists(path:String):Bool
-	return Assets.exists(Paths.file(path));
+import backend.SkinHandler;
+import backend.SkinType;
+import objects.SkinHelper;
 
-/*
-	songSkins.noteSkin = the song note skin
-	songSkins.splashSkin = the song splash skin
+public var songSkins:{arrow:String, splash:String, covers:String}
+public var charSkins:Bool = SONG.meta.customValues?.charSkins ?? true;
 
-	char.extra.get('noteSkin') = the characters respective note skin
-	char.extra.get('splashSkin') = the characters respective splash skin
-
-	strumLine.extra.get('noteSkin') = the strumLine's respective note skin
-	strumLine.extra.get('splashSkin') = the strumLine's respective splash skin
-
-	note.extra.get('stopSkinChange').note = if true then it prevents both the song and char note skin
-	note.extra.get('stopSkinChange').splash = if true then it prevents both the song and char splash skin
-	strum.extra.get('stopSkinChange') = if true then it prevents both the song and char splash skin
-*/
-
-public var songSkins:{note:String, splash:String}
-
-var allowCharSkins:Bool = SONG.meta.customValues?.charSkins ?? SkinHandler.defaultAllowCharSkin;
+function new() {
+	SkinHandler.reload();
+	songSkins = {
+		arrow: SkinHandler.getSongSkin(SkinType.ARROW),
+		splash: SkinHandler.getSongSkin(SkinType.SPLASH),
+		covers: SkinHandler.getSongSkin(SkinType.COVERS)
+	}
+}
 
 function create():Void {
-	SkinHandler.reloadSkinsMap();
-	songSkins = {
-		note: SkinHandler.getSongSkin(),
-		splash: SkinHandler.getSongSkin(true)
-	}
-
-	var songSkinMeta = SkinHandler.returnSkinMeta(curSong, strumLines.length);
+	var songSkinMeta:Array<{arrow:String, splash:String, covers:String}> = SkinHandler.getCurSongMeta(SONG.meta.name, PlayState.variation, strumLines.length);
 	for (i => strumLine in strumLines.members) {
 		var skinMeta = songSkinMeta[i];
-		var skinName:String = SkinHandler.skinNameHelper(skinMeta.note);
-		var splashName:String = SkinHandler.skinNameHelper(skinMeta.splash, true);
-
-		if (allowCharSkins && (strumLine?.characters != null || strumLine?.characters[0] != null)) {
-			var charSkin:String = strumLine.characters[0].extra.get('noteSkin');
-			var charSplash:String = strumLine.characters[0].extra.get('splashSkin');
-			if (charSkin != null) skinName = SkinHandler.skinNameHelper(charSkin, false, true);
-			if (charSplash != null) splashName = SkinHandler.skinNameHelper(charSplash, true, true);
+		var skinNames:{arrow:String, splash:String, covers:String} = {
+			arrow: SkinHandler.skinNameHelper(skinMeta.arrow, SkinType.ARROW),
+			splash: SkinHandler.skinNameHelper(skinMeta.splash, SkinType.SPLASH),
+			covers: SkinHandler.skinNameHelper(skinMeta.covers, SkinType.COVERS)
 		}
+		graphicCache.cache(Paths.getPath('images/' + SkinHandler.getSkinPath(skinNames.arrow) + '.png'));
 
-		var skinData = SkinHandler.getSkinData(skinName);
-		strumLine.extra.set('noteSkin', skinName);
-		strumLine.extra.set('splashSkin', splashName);
-		strumLine.extra.set('isPixel', skinData.pixelEnforcement ?? false);
-		strumLine.extra.set('theSkinData', skinData);
-	}
-}
-
-var noExistList:{notes:Array<String>, splashes:Array<String>} = {
-	notes: [],
-	splashes: []
-}
-function postCreate():Void {
-	if (noExistList.notes.length > 0) trace('The note skin' + (noExistList.notes.length > 1 ? 's' : '') + ' "' + noExistList.notes.join('", "') + '" don\'t exist!');
-	if (noExistList.splashes.length > 0) trace('The splash skin' + (noExistList.splashes.length > 1 ? 's' : '') + ' "' + noExistList.splashes.join('", "') + '" don\'t exist!');
-
-	for (strumLine in strumLines) {
-		for (note in strumLine.notes) {
-			var offsetFunc = (name:String) -> {
-				var skinData = note.extra.get('theSkinData');
-				if (skinData == null || skinData.offsets == null) {
-					note.frameOffset.set();
-					return;
-				}
-				var offset:Array<Float> = skinData.offsets.global.copy();
-				if (note.isSustainNote) {
-					for (i in 0...3)
-						offset[i] += skinData.offsets.tail[note.noteData][i] ?? 0;
-					note.frameOffset.set(
-						-offset[0],
-						0//-offset[1] - (downscroll ? offset[2] : 0)
-					); // editing Y offset would do some wierd shit
-				} else {
-					for (i in 0...3)
-						offset[i] += skinData.offsets.note[note.noteData][i] ?? 0;
-					note.frameOffset.set(
-						-offset[0],
-						-offset[1] - (downscroll ? offset[2] : 0)
-					);
-				}
+		if (charSkins && !(strumLine?.characters == null || strumLine?.characters[0] == null)) {
+			var char:Character = strumLine.characters[0];
+			var charSkinNames = {
+				arrow: char.extra.get('arrowSkin') ?? 'No Skin',
+				splash: char.extra.get('splashSkin') ?? 'No Skin',
+				covers: char.extra.get('coverSkin') ?? 'No Skin'
 			}
-			note.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> offsetFunc(name));
-			note.extra.set('offsetFunc', offsetFunc); // jic
-			offsetFunc(note.animation.name);
+			if (charSkinNames.arrow != 'No Skin')
+				skinNames.arrow = SkinHandler.skinNameHelper(charSkinNames.arrow, SkinType.ARROW, true);
+			if (charSkinNames.splash != 'No Skin')
+				skinNames.splash = SkinHandler.skinNameHelper(charSkinNames.splash, SkinType.SPLASH, true);
+			if (charSkinNames.covers != 'No Skin')
+				skinNames.covers = SkinHandler.skinNameHelper(charSkinNames.covers, SkinType.COVERS, true);
 		}
-		for (index => strum in strumLine.members) {
-			var offsetFunc = (name:String) -> {
-				var skinData = strum.extra.get('theSkinData');
-				if (skinData == null || skinData.offsets == null) {
-					strum.frameOffset.set();
-					return;
-				}
-				var offset:Array<Float> = skinData.offsets.global.copy();
-				switch (name) {
-					case 'static':
-						for (i in 0...3)
-							offset[i] += skinData.offsets.still[index][i] ?? 0;
-						strum.frameOffset.set(
-							-offset[0],
-							-offset[1] - (downscroll ? offset[2] : 0)
-						);
-					case 'pressed':
-						for (i in 0...3)
-							offset[i] += skinData.offsets.press[index][i] ?? 0;
-						strum.frameOffset.set(
-							-offset[0],
-							-offset[1] - (downscroll ? offset[2] : 0)
-						);
-					case 'confirm':
-						for (i in 0...3)
-							offset[i] += skinData.offsets.glow[index][i] ?? 0;
-						strum.frameOffset.set(
-							-offset[0],
-							-offset[1] - (downscroll ? offset[2] : 0)
-						);
-				}
-			}
-			strum.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> offsetFunc(name));
-			strum.extra.set('offsetFunc', offsetFunc); // jic
-			offsetFunc('static');
-		}
-	}
-}
+		graphicCache.cache(Paths.getPath('images/' + SkinHandler.getSkinPath(skinNames.arrow) + '.png'));
 
-/**
- * A quick way to reload a note or strums skin. You can even change the skin in this still.
- * @param sprite The note or strum object itself.
- * @param strumLine The strumLine it's attached to.
- * @param direction The direction ID.
- * @param skinName The name of the new skin.
- * @param isPixel Should it be pixel?
- * @return `Bool` ~ If true, the skin reloaded successfully.
- */
-public function reloadSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, ?skinName:String, ?isPixel = false):Bool {
-	if ((sprite is Note) || (sprite is Strum)) {
-		return changeSkin(sprite, strumLine, direction ?? event.note.extra.get('visualIndex'), skinName ?? sprite.extra.get('curSkin'), isPixel ?? sprite.extra.get('isPixel'));
-	} else {
-		trace('Only Note\'s and Strum\'s please.');
-		return false;
-	}
-}
-/**
- * Change the note or strum skin.
- * @param sprite The note or strum object itself.
- * @param strumLine The strumLine it's attached to.
- * @param direction The direction ID.
- * @param skinName The name of the new skin.
- * @param isPixel Should it be pixel?
- * @param forceReload Force change the skin.
- * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
- * @return `Bool` ~ If true, the skin changed successfully.
- */
-public function changeSkin(sprite:Dynamic, strumLine:StrumLine, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
-	isPixel ??= false;
-	forceReload ??= false;
-	var length:Int = useMania ? mania : strumLine.length;
-	var fixedID:Int = direction % length;
-	animPrefix ??= strumLine.strumAnimPrefix[fixedID];
-
-	if (sprite is Note) {
-		var skinData = SkinHandler.getSkinData(skinName);
-		if (!forceReload)
-			if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
-				return false;
-		if (skinName == null || isPixel == null)
-			return false;
-		var theSkin:String = SkinHandler.getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = SkinHandler.getSkinPath(skinName = songSkins.note);
-		if (isPixel) {
-			if (sprite.isSustainNote) {
-				var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
-				sprite.loadGraphic(Paths.image(ughSkin));
-				sprite.width = sprite.width / 4;
-				sprite.height = sprite.height / 2;
-				sprite.loadGraphic(Paths.image(ughSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-			} else {
-				sprite.loadGraphic(Paths.image(theSkin));
-				sprite.width = sprite.width / 4;
-				sprite.height = sprite.height / 5;
-				sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-			}
-			loadAnimsThePixelWay(sprite, direction, length);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
-		} else {
-			sprite.frames = Paths.getFrames(theSkin);
-
-			var colors:Array<String> = ['purple', 'blue', 'green', 'red'];
-			switch (fixedID) {
-				case 0:
-					sprite.animation.addByPrefix('scroll', 'purple0', 24);
-					sprite.animation.addByPrefix('hold', 'purple hold piece', 24);
-					sprite.animation.addByPrefix('holdend', 'pruple end hold', 24);
-				default:
-					sprite.animation.addByPrefix('scroll', colors[fixedID] + '0', 24);
-					sprite.animation.addByPrefix('hold', colors[fixedID] + ' hold piece', 24);
-					sprite.animation.addByPrefix('holdend', colors[fixedID] + ' hold end', 24);
-			}
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
-		}
-		sprite.updateHitbox();
-		sprite.antialiasing = !isPixel;
-		sprite.extra.set('curSkin', skinName);
-		sprite.extra.set('visualIndex', direction);
-		sprite.extra.set('isPixel', isPixel);
-		sprite.extra.set('theSkinData', skinData);
-	} else if (sprite is Strum) {
-		var skinData = SkinHandler.getSkinData(skinName);
-		if (!forceReload)
-			if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
-				return false;
-		if (skinName == null || isPixel == null)
-			return false;
-		var theSkin:String = SkinHandler.getSkinPath(skinName);
-		if (!checkFileExists('images/' + theSkin + '.png')) theSkin = SkinHandler.getSkinPath(skinName = songSkins.note);
-		if (isPixel) {
-			sprite.loadGraphic(Paths.image(theSkin));
-			sprite.width = sprite.width / 4;
-			sprite.height = sprite.height / 5;
-			sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-			loadAnimsThePixelWay(sprite, direction, length);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
-		} else {
-			sprite.frames = Paths.getFrames(theSkin);
-			sprite.animation.addByPrefix('green', 'arrowUP', 24);
-			sprite.animation.addByPrefix('blue', 'arrowDOWN', 24);
-			sprite.animation.addByPrefix('purple', 'arrowLEFT', 24);
-			sprite.animation.addByPrefix('red', 'arrowRIGHT', 24);
-
-			sprite.animation.addByPrefix('static', 'arrow' + animPrefix.toUpperCase(), 24);
-			sprite.animation.addByPrefix('pressed', animPrefix + ' press', 24, false);
-			sprite.animation.addByPrefix('confirm', animPrefix + ' confirm', 24, false);
-			sprite.setGraphicSize(Std.int((sprite.width * skinData.scale) * strumLine.strumScale));
-		}
-		sprite.updateHitbox();
-		sprite.antialiasing = !isPixel;
-		sprite.extra.set('curSkin', skinName);
-		sprite.extra.set('visualIndex', direction);
-		sprite.extra.set('isPixel', isPixel);
-		sprite.extra.set('theSkinData', skinData);
-	} else {
-		trace('Only Note\'s and Strum\'s please.');
-		return false;
-	}
-	return true;
-}
-
-public function loadAnimsThePixelWay(sprite:Dynamic, direction:Int, ?length:Int = 4):Void {
-	length ??= 4;
-	if (sprite is Note) {
-		if (sprite.isSustainNote) sprite.animation.add('holdend', [direction + length], 12);
-		sprite.animation.add(sprite.isSustainNote ? 'hold' : 'scroll', [direction + (sprite.isSustainNote ? 0 : length)], 12);
-	} else if (sprite is Strum) {
-		sprite.animation.add('static', [direction], 12);
-		sprite.animation.add('pressed', [direction + length, direction + (length * 2)], 12, false);
-		sprite.animation.add('confirm', [direction + (length * 3), direction + (length * 4)], 12, false);
-	} else trace('Only Note\'s and Strum\'s please.');
-}
-
-function onNoteCreation(event):Void {
-	// sets up extra var data
-	event.note.extra.set('stopSkinChange', {note: false, splash: false});
-
-	// assign the skin
-	var theSkin:String = songSkins.note ?? defaultSkins.note;
-
-	// assign strumLine skin
-	var strumLineSkin:String = event.note.strumLine.extra.get('noteSkin');
-	if (strumLineSkin != null) theSkin = strumLineSkin;
-
-	// assign character skin
-	if (allowCharSkins && (event.note.strumLine?.characters != null || event.note.strumLine?.characters[0] != null)) {
-		var charSkin:String = event.note.strumLine.characters[0].extra.get('noteSkin');
-		if (charSkin != null) theSkin = SkinHandler.skinNameHelper(charSkin, false, true);
-	}
-
-	// complicated ass shit, I don't remember how it works
-	var prevSkin:String = theSkin;
-	event.note.extra.set('curSkin', theSkin);
-	scripts.event('onNoteSkinSet', event);
-	if (prevSkin != event.note.extra.get('curSkin'))
-		theSkin = event.note.extra.get('curSkin');
-
-	// "stopSkinChange" for setting your own shit
-	if (!event.note.extra.get('stopSkinChange').note) {
-		var resultSkin:String = Note.customTypePathExists(Paths.image(SkinHandler.getSkinPath(event.noteType))) ? event.noteType : theSkin;
-		switch (resultSkin) {
-			default:
-				if (!noExistList.notes.contains(resultSkin)) {
-					event.cancelled = true;
-					if (SkinHandler.noteSkinData.exists(resultSkin)) {
-						var skinData = SkinHandler.getSkinData(resultSkin);
-						changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, skinData.pixelEnforcement ?? false, true);
-					} else {
-						if (checkFileExists('images/' + SkinHandler.getSkinPath(resultSkin) + '.png')) {
-							if (checkFileExists('images/' + SkinHandler.getSkinPath(resultSkin) + '.xml'))
-								changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, false, true);
-							else if (checkFileExists('images/' + SkinHandler.getSkinPath(resultSkin) + 'ENDS.png')) // pixel
-								changeSkin(event.note, event.note.strumLine, event.strumID, resultSkin, true, true);
-							else {
-								if (!noExistList.notes.contains(resultSkin))
-									noExistList.notes.push(resultSkin);
-								event.cancelled = false;
-							}
-						}
-					}
-				}
-		}
-	}
-
-	// assign the skin
-	var theSkin:String = songSkins.splash ?? defaultSkins.splash;
-
-	// assign strumLine skin
-	var strumLineSkin:String = event.note.strumLine.extra.get('splashSkin');
-	if (strumLineSkin != null) theSkin = strumLineSkin;
-
-	// assign character skin
-	if (allowCharSkins && (event.note.strumLine?.characters != null || event.note.strumLine?.characters[0] != null)) {
-		var charSkin:String = event.note.strumLine.characters[0].extra.get('splashSkin');
-		if (charSkin != null) theSkin = SkinHandler.skinNameHelper(charSkin, true, true);
-	}
-
-	// complicated ass shit, I don't remember how it works
-	var prevSkin:String = theSkin;
-	event.note.extra.set('splashSkin', theSkin);
-	scripts.event('onSplashSkinSet', event);
-	if (prevSkin != event.note.extra.get('splashSkin'))
-		theSkin = event.note.extra.get('splashSkin');
-
-	// "stopSkinChange" for setting your own shit
-	if (!event.note.extra.get('stopSkinChange').splash) {
-		var resultSkin:String = checkFileExists('data/splashes/' + event.noteType + '.xml') ? event.noteType : theSkin;
-		if (!noExistList.splashes.contains(resultSkin)) {
-			if (checkFileExists('data/splashes/' + resultSkin + '.xml'))
-				event.note.extra.set('splashSkin', event.note.splash = resultSkin);
-			else {
-				if (!noExistList.splashes.contains(resultSkin))
-					noExistList.splashes.push(resultSkin);
-			}
-		}
+		// var skinData = SkinHandler.getSkinData(skinNames.arrow);
+		strumLine.extra.set('arrowSkin', skinNames.arrow ?? songSkins.arrow);
+		strumLine.extra.set('coverSkin', skinNames.covers ?? songSkins.covers);
 	}
 }
 
 function onStrumCreation(event):Void {
-	// var init
-	var strumLine:StrumLine = strumLines.members[event.player];
+	// event.cancelled = true;
 
-	// sets up extra var data
-	event.strum.extra.set('stopSkinChange', false);
+	var theSkin:String = event.strum.strumLine.extra.get('arrowSkin') ?? songSkins.arrow ?? SkinHandler.defaultSkins.arrow;
 
-	// assign the skin
-	var theSkin:String = songSkins.note ?? defaultSkins.note;
-
-	// assign strumLine skin
-	var strumLineSkin:String = strumLine.extra.get('noteSkin');
-	if (strumLineSkin != null) theSkin = strumLineSkin;
-
-	// assign character skin
-	if (allowCharSkins && (strumLine?.characters != null || strumLine?.characters[0] != null)) {
-		var charSkin:String = strumLine.characters[0].extra.get('noteSkin');
-		if (charSkin != null) theSkin = SkinHandler.skinNameHelper(charSkin, false, true);
+	if (charSkins && !(event.strum.strumLine?.characters == null || event.strum.strumLine?.characters[0] == null)) {
+		var charSkin:String = event.strum.strumLine.characters[0].extra.get('arrowSkin') ?? 'No Skin';
+		if (charSkin != null) theSkin = SkinHandler.skinNameHelper(charSkin, SkinType.ARROW, true);
 	}
 
-	// complicated ass shit, I don't remember how it works
-	var prevSkin:String = theSkin;
-	event.strum.extra.set('curSkin', theSkin);
-	scripts.event('onStrumSkinSet', event);
-	if (prevSkin != event.strum.extra.get('curSkin'))
-		theSkin = event.strum.extra.get('curSkin');
+	var handler:SkinHelper = new SkinHelper(event.strum, theSkin ?? 'Parent Skin');
+	event.strum.extra.set('skinHandler', handler);
+}
+function onNoteCreation(event):Void {
+	// event.cancelled = true;
 
-	// "stopSkinChange" for setting your own shit
-	if (!event.strum.extra.get('stopSkinChange')) {
-		switch (theSkin) {
-			default:
-				if (!noExistList.notes.contains(theSkin)) {
-					event.cancelled = true;
-					if (SkinHandler.noteSkinData.exists(theSkin)) {
-						var skinData = SkinHandler.getSkinData(theSkin);
-						changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, skinData.pixelEnforcement ?? false, true, event.animPrefix);
-					} else {
-						if (checkFileExists('images/' + SkinHandler.getSkinPath(theSkin) + '.png')) {
-							if (checkFileExists('images/' + SkinHandler.getSkinPath(theSkin) + '.xml'))
-								changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, false, true, event.animPrefix);
-							else if (checkFileExists('images/' + SkinHandler.getSkinPath(theSkin) + 'ENDS.png')) // pixel
-								changeSkin(event.strum, strumLines.members[event.player], event.strumID, theSkin, true, true, event.animPrefix);
-							else {
-								if (!noExistList.notes.contains(theSkin))
-									noExistList.notes.push(theSkin);
-								event.cancelled = false;
-							}
-						}
-					}
-				}
-		}
+	var theSkin:String = event.note.strumLine.extra.get('arrowSkin') ?? songSkins.arrow ?? SkinHandler.defaultSkins.arrow;
+
+	if (charSkins && !(event.note.strumLine?.characters == null || event.note.strumLine?.characters[0] == null)) {
+		var charSkin:String = event.note.strumLine.characters[0].extra.get('arrowSkin') ?? 'No Skin';
+		if (charSkin != null) theSkin = SkinHandler.skinNameHelper(charSkin, SkinType.ARROW, true);
 	}
-}
 
-var mania:Int = 4;
-function onPreGenerateStrums(event):Void {
-	mania = event.amount;
-}
-var useMania:Bool = true;
-function onPostGenerateStrums(event):Void {
-	useMania = false;
-}
-
-function onNoteHit(event):Void {
-	var strum:Strum = event.note.strumLine.members[event.direction];
-	var strumLineSkin = event.note.strumLine.extra.get('theSkinData');
-	var skinData = event.note.extra.get('theSkinData');
-	strum.extra.set('noteSkinData', skinData); // jic
-
-	if (skinData.canUpdateStrum) reloadSkin(strum, event.note.strumLine, event.direction, event.note.extra.get('curSkin'), skinData.pixelEnforcement ?? event.note.extra.get('isPixel'));
-	else reloadSkin(strum, event.note.strumLine, event.direction, event.note.strumLine.extra.get('noteSkin'), strumLineSkin.pixelEnforcement ?? event.note.strumLine.extra.get('isPixel'));
-
-	if (event.showSplash) {
-		event.showSplash = false;
-		scripts.call('onSpawnSplash', [event, spawnSplash(event.note), false]);
-	}
-}
-
-public function spawnSplash(note:Note):FunkinSprite {
-	var targetSplash:String = note.splash;
-	var skinData = note.extra.get('theSkinData');
-	if (skinData.splashOverride != null && StringTools.trim(skinData.splashOverride) != '')
-		targetSplash = skinData.splashOverride;
-	splashHandler.__grp = splashHandler.getSplashGroup(targetSplash);
-
-	var splash:FunkinSprite = splashHandler.__grp.showOnStrum(note.strumLine.members[note.noteData]);
-	splashHandler.add(splash);
-	while (splashHandler.members.length > 8)
-		splashHandler.remove(splashHandler.members[0], true);
-
-	// coolswag
-	splash.x += skinData.offsets.global[0] + skinData.offsets.splash[0] * note.strumLine.strumScale;
-	splash.y += skinData.offsets.global[1] + skinData.offsets.splash[1] * note.strumLine.strumScale;
-	if (!splash.extra.exists('baseScale'))
-		splash.extra.set('baseScale', splash.scale.x);
-	splash.scale.set(splash.extra.get('baseScale') * note.strumLine.strumScale, splash.extra.get('baseScale') * note.strumLine.strumScale);
-	return splash;
+	var handler:SkinHelper = new SkinHelper(event.note, theSkin ?? 'Parent Skin');
+	event.note.extra.set('skinHandler', handler);
+	if (event.note.isSustainNote && event.note.nextSustain == null)
+		event.note.sustainParent.extra.get('skinHandler').reloadSkin(null, true);
 }

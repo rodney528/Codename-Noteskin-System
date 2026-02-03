@@ -1,4 +1,5 @@
 import funkin.backend.MusicBeatGroup;
+import funkin.backend.system.Flags;
 import funkin.game.SplashHandler;
 import funkin.options.PlayerSettings;
 
@@ -83,10 +84,9 @@ class PreviewStrumLine extends MusicBeatGroup {
 
 		for (skin in splashSkinList) {
 			if (!checkFileExists('data/splashes/' + skin + '.xml')) continue;
-			splashHandler.__grp = splashHandler.getSplashGroup(skin);
-			var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strumLine.members[0]);
+			var splash:FunkinSprite = splashHandler.getSplashGroup(skin).showOnStrum(strumLine.members[0]);
 			splashHandler.add(splash);
-			while (splashHandler.members.length > 8)
+			while (splashHandler.members.length > Flags.MAX_SPLASHES)
 				splashHandler.remove(splashHandler.members[0], true);
 
 			splashScales.set(skin, splash?.scale?.x ?? 1);
@@ -299,10 +299,9 @@ class PreviewStrumLine extends MusicBeatGroup {
 	 */
 	public function spawnSplash(direction:Int, skinName:String):FunkinSprite {
 		if (!checkFileExists('data/splashes/' + skinName + '.xml')) skinName = 'default';
-		splashHandler.__grp = splashHandler.getSplashGroup(skinName);
-		var splash:FunkinSprite = splashHandler.__grp.showOnStrum(strumLine.members[direction]);
+		var splash:FunkinSprite = splashHandler.getSplashGroup(skinName).showOnStrum(strumLine.members[direction]);
 		splashHandler.add(splash);
-		while (splashHandler.members.length > 8)
+		while (splashHandler.members.length > Flags.MAX_SPLASHES)
 			splashHandler.remove(splashHandler.members[0], true);
 
 		var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;

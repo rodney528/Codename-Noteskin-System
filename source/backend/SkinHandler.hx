@@ -1,19 +1,20 @@
-import Reflect;
+import backend.SkinType;
+import funkin.backend.system.Flags;
 
-class SkinManager {
+class SkinHandler {
 	/**
 	 * The default skins.
 	 */
-	public var defaultSkins:{note:String, splash:String}
+	public static var defaultSkins = {arrow: 'default', splash: 'default', covers: 'default'}
 
 	/**
 	 * Loaded skin data's.
 	 */
-	public var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
+	public static var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
 	/**
 	 * Blank skin data.
 	 */
-	public var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
+	public static var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>, splash:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
 		texture: null,
 		pixelEnforcement: false,
 		offsets: {
@@ -60,13 +61,13 @@ class SkinManager {
 	 * @param name Skin key name.
 	 * @param ifBlankThenNull If true, then if said key doesn't exist then it returns null instead of blank data.
 	 */
-	public function getSkinData(name:String, ?ifBlankThenNull:Bool):{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} {
+	public static function getSkinData(name:String, ?ifBlankThenNull:Bool):{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} {
 		ifBlankThenNull ??= false;
 		return noteSkinData.exists(name) ? noteSkinData.get(name) : (ifBlankThenNull ? null : blankSkinData);
 	}
 
-	private var _skinList:Array<String> = [];
-	private function _reloadSkinsMap(name:String, onEachFinish:String->Void):Void {
+	static var _skinList:Array<String> = [];
+	static function _reload(name:String, onEachFinish:String->Void):Void {
 		var simpleName:String = name;
 		if (!_skinList.contains(simpleName)) {
 			var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{global:Array<Float>, still:Array<Array<Float>>, press:Array<Array<Float>>, glow:Array<Array<Float>>, note:Array<Array<Float>>, tail:Array<Array<Float>>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file('data/skins/' + simpleName + '.json'));
@@ -96,32 +97,39 @@ class SkinManager {
 	/**
 	 * Reloads the noteSkinData map.
 	 */
-	public function reloadSkinsMap(?renderListTxt:Bool, ?onEachFinish:String->Void):Void {
+	public static function reload(?renderListTxt:Bool, ?onEachFinish:String->Void):Void {
 		renderListTxt ??= false;
 		_skinList = [];
 		noteSkinData.clear();
 		if (renderListTxt)
 			for (file in CoolUtil.coolTextFile('data/skins/list.txt'))
-				_reloadSkinsMap(file, onEachFinish);
+				_reload(file, onEachFinish);
 		for (file in Paths.getFolderContent('data/skins/'))
 			if (StringTools.endsWith(file, '.json'))
-				_reloadSkinsMap(StringTools.replace(file, '.json', ''), onEachFinish);
+				_reload(StringTools.replace(file, '.json', ''), onEachFinish);
 	}
-	public function getSongSkin(?splash:Bool):String {
-		splash ??= false;
-		return splash ?
-		StringTools.replace(PlayState.SONG.meta.customValues?.splashSkin ?? 'Default Skin', 'Default Skin', defaultSkins.splash)
-		:
-		StringTools.replace(PlayState.SONG.meta.customValues?.noteSkin ?? 'Default Skin', 'Default Skin', defaultSkins.note);
+	public static function getSongSkin(?type:String):String {
+		var toReplace, replacer:String;
+		switch (type) {
+			case SkinType.ARROW:
+				toReplace = PlayState?.SONG?.meta?.customValues?.arrowSkin;
+				replacer = defaultSkins.arrow;
+			case SkinType.SPLASH:
+				toReplace = PlayState?.SONG?.meta?.customValues?.splashSkin;
+				replacer = defaultSkins.splash;
+			case SkinType.COVERS:
+				toReplace = PlayState?.SONG?.meta?.customValues?.coverSkin;
+				replacer = defaultSkins.covers;
+			default:
+				throw 'type "' + type + '" does not exist, please insert a valid type';
+		}
+		toReplace ??= 'Default Skin'; replacer ??= 'Song Skin';
+		return StringTools.replace(toReplace, 'Default Skin', replacer);
 	}
 
-	public var defaultAllowCharSkin:Bool;
-	public function new(note:String, splash:String, allowChar:Bool) {
-		defaultSkins = {note: note, splash: splash}
-		defaultAllowCharSkin = allowChar;
-	}
+	public static var defaultAllowCharSkin:Bool = true;
 
-	/* public function getSetOffsetFunc(?isNote:Bool):(Dynamic, String, StrumLine)->Void {
+	/* public static function getSetOffsetFunc(?isNote:Bool):(Dynamic, String, StrumLine)->Void {
 		isNote ??= false;
 		return isNote ? (note:Note, name:String, strumLine:StrumLine) -> {
 			var skinData = getSkinData(note.extra.get('curSkin'), true);
@@ -181,9 +189,9 @@ class SkinManager {
 	/**
 	 * Returns the noteskin path.
 	 * @param skin Skin key name.
-	 * @return `String` ~ Noteskin path.
+	 * @return String ~ Noteskin path.
 	 */
-	public function getSkinPath(skin:String):String {
+	public static function getSkinPath(skin:String):String {
 		var data = getSkinData(skin, true);
 		var texture:String = data != null ? data.texture : ('game/notes/' + skin);
 		return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
@@ -192,28 +200,30 @@ class SkinManager {
 	/**
 	 * Helper function for getting skin name when using shortcut names.
 	 * @param name Skin key name.
-	 * @param splash Is splash?
+	 * @param splash The skin type.
 	 * @param char Is character?
-	 * @return `String`
+	 * @return String
 	 */
-	public function skinNameHelper(name:String, ?splash:Bool, ?char:Bool):String {
-		splash ??= false;
-		char ??= false;
-		if (char)
-			return StringTools.replace(name, 'No Skin', splash ? (getSongSkin(true) ?? defaultSkins.splash) : (getSongSkin() ?? defaultSkins.note));
-		else {
-			var result:String = StringTools.replace(name, 'Default Skin', splash ? defaultSkins.splash : defaultSkins.note);
-			return StringTools.replace(result, 'Song Skin', splash ? (getSongSkin(true) ?? defaultSkins.splash) : (getSongSkin() ?? defaultSkins.note));
+	public static function skinNameHelper(name:String, ?type:String, ?char:Bool):String {
+		var defaultSkin:String;
+		defaultSkin = switch (type) {
+			case SkinType.ARROW: defaultSkins.arrow;
+			case SkinType.SPLASH: defaultSkins.splash;
+			case SkinType.COVERS: defaultSkins.covers;
+			default: throw 'type "' + type + '" does not exist, please insert a valid type';
 		}
+		if (char ?? false) // TODO: Figure out why tf I'm using StringTools for this shit.
+			return StringTools.replace(name, 'No Skin', getSongSkin(type) ?? defaultSkin);
+		var result:String = StringTools.replace(name, 'Default Skin', defaultSkin);
+		return StringTools.replace(result, 'Song Skin', getSongSkin(type) ?? defaultSkin);
 	}
-	public function returnSkinMeta(songFolderName:String, ?strumLineCount:Int):Array<{note:String, splash:String}> {
-		if (Assets.exists(Paths.file('songs/' + songFolderName + '/skins.json'))) {
-			return CoolUtil.parseJson(Paths.file('songs/' + songFolderName + '/skins.json'));
-		} else {
-			return [
-				for (i in 0...(strumLineCount ?? 1))
-					{note: 'Song Skin', splash: 'Song Skin'}
-			];
-		}
+	public static function getCurSongMeta(songFolderName:String, ?songVariant:String, ?strumLineCount:Int):Array<{note:String, splash:String}> {
+		var variantSuffix = songVariant == null ? '' : '-' + songVariant;
+		if (Assets.exists(Paths.file('songs/' + songFolderName + '/skins' + variantSuffix + '.json')))
+			return CoolUtil.parseJson(Paths.file('songs/' + songFolderName + '/skins' + variantSuffix + '.json'));
+		return [
+			for (i in 0...(strumLineCount ?? 1))
+				{arrow: 'Song Skin', splash: 'Song Skin', covers: 'Song Skin'}
+		];
 	}
 }
