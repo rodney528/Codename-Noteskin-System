@@ -124,6 +124,7 @@ class SkinHelper {
 			case 'note': parent.animation.play('scroll', true);
 			case 'sustain': parent.animation.play(parent.nextSustain == null ? 'holdend' : 'hold', true);
 		}
+		parent.updateHitbox();
 	}
 
 	function sustainLoop(note:Note, func:Note->Void, ?noEffectParent:Bool):Void {
