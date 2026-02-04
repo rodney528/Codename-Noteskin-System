@@ -31,19 +31,19 @@
 	<notes>
 		<mania count="4">
 			<set id="0">
-				<anim name="scroll" indices="4"/>
+				<anim name="scroll" indices="4" fps="12"/>
 			</set>
 
 			<set id="1">
-				<anim name="scroll" indices="5"/>
+				<anim name="scroll" indices="5" fps="12"/>
 			</set>
 
 			<set id="2">
-				<anim name="scroll" indices="6"/>
+				<anim name="scroll" indices="6" fps="12"/>
 			</set>
 
 			<set id="3">
-				<anim name="scroll" indices="7"/>
+				<anim name="scroll" indices="7" fps="12"/>
 			</set>
 		</mania>
 	</notes>
@@ -51,23 +51,23 @@
 	<sustains sprite="stages/school/ui/arrowEnds" height="2">
 		<mania count="4">
 			<set id="0">
-				<anim name="hold" indices="0"/>
-				<anim name="holdend" indices="4"/>
+				<anim name="hold" indices="0" fps="12"/>
+				<anim name="holdend" indices="4" fps="12"/>
 			</set>
 
 			<set id="1">
-				<anim name="hold" indices="1"/>
-				<anim name="holdend" indices="5"/>
+				<anim name="hold" indices="1" fps="12"/>
+				<anim name="holdend" indices="5" fps="12"/>
 			</set>
 
 			<set id="2">
-				<anim name="hold" indices="2"/>
-				<anim name="holdend" indices="6"/>
+				<anim name="hold" indices="2" fps="12"/>
+				<anim name="holdend" indices="6" fps="12"/>
 			</set>
 
 			<set id="3">
-				<anim name="hold" indices="3"/>
-				<anim name="holdend" indices="7"/>
+				<anim name="hold" indices="3" fps="12"/>
+				<anim name="holdend" indices="7" fps="12"/>
 			</set>
 		</mania>
 	</sustains>
