@@ -20,7 +20,7 @@
 				<anim name="confirm" anim="up confirm"/>
 			</set>
 
-			<set id="2">
+			<set id="3">
 				<anim name="static" anim="arrowRIGHT"/>
 				<anim name="pressed" anim="right press"/>
 				<anim name="confirm" anim="right confirm"/>
