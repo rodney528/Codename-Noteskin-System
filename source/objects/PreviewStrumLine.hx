@@ -1,333 +1,106 @@
 import funkin.backend.MusicBeatGroup;
 import funkin.backend.system.Flags;
 import funkin.game.SplashHandler;
-import funkin.options.PlayerSettings;
+import noteskin.NoteskinHandler;
 
 class PreviewStrumLine extends MusicBeatGroup {
-	private var splashScales:Map<String, Float> = [];
-	private var splashHandler:SplashHandler;
+	var splashScales:Map<String, Float> = [];
+	var splashHandler:SplashHandler;
 
+	public var mania(default, set):Int;
+	function set_mania(value:Int):Int {
+		if (strumLine != null)
+			strumLine.data.keyCount = value;
+		return mania = value;
+	}
 	public var strumLine:StrumLine;
-	public var skin:String = 'default';
-	public var data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
-		texture: null,
-		pixelEnforcement: false,
-		offsets: {
-			still: [0, 0, 0],
-			press: [0, 0, 0],
-			glow: [0, 0, 0],
-			note: [0, 0, 0]
-		},
-		canUpdateStrum: false,
-		splashOverride: '',
-		scale: 0.7
+	public var skin(default, set):String;
+	function set_skin(value:String):String {
+		if (strumLine != null)
+		for (strum in strumLine) {
+			var handler:NoteskinHandler = strum.extra.get('skinHandler');
+			if (handler.skin != value)
+				handler.skin = value;
+		}
+		return skin = value;
 	}
 
-	public function new(?x:Float, ?y:Float, skin:String, data:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}, ?size:Float) {
-		x ??= 0.5;
+	public function new(?x:Float, ?y:Float, ?pureX:Bool, skin:String, ?startMania:Int, ?size:Float) {
+		pureX ?? false;
+		x ??= (pureX ? FlxG.width / 2 : 0.5);
 		y ??= 50;
+		this.skin = skin;
+		mania = startMania ??= 4;
 		size ??= 1;
-		super();
-		strumLine = new StrumLine([], FlxPoint.get((FlxG.width * x) - ((Note.swagWidth * size) * 2), y), size, true, true, PlayerSettings.solo.controls);
-		this.skin = skin ??= this.skin;
-		this.data = data ??= this.data;
 
-		for (i in 0...4) {
-			var babyArrow:Strum = new Strum(strumLine.startingPos.x + ((Note.swagWidth * strumLine.strumScale) * i), strumLine.startingPos.y);
-			babyArrow.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
-				if (data == null) {
-					babyArrow.frameOffset.set();
-					return;
-				}
-				switch (name) {
-					case 'note':
-						babyArrow.frameOffset.set(-data.offsets.note[0] * strumLine.strumScale, -data.offsets.note[1] * strumLine.strumScale);
-					case 'static':
-						babyArrow.frameOffset.set(-data.offsets.still[0] * strumLine.strumScale, -data.offsets.still[1] * strumLine.strumScale);
-					case 'pressed':
-						babyArrow.frameOffset.set(-data.offsets.press[0] * strumLine.strumScale, -data.offsets.press[1] * strumLine.strumScale);
-					case 'confirm':
-						babyArrow.frameOffset.set(-data.offsets.glow[0] * strumLine.strumScale, -data.offsets.glow[1] * strumLine.strumScale);
-				}
-			});
-			babyArrow.animation.onFinish.add((name:String) -> {
-				switch (name) {
-					case 'confirm':
-						babyArrow.playAnim('pressed');
-					case 'note':
-						babyArrow.playAnim('static');
-				}
-			});
-			strumLine.insert(babyArrow.ID = i, babyArrow);
-		}
-		for (i => strum in strumLine.members) {
-			changeSkin(strum, i, skin, data.pixelEnforcement);
-			strum.playAnim('static');
-		}
+		super();
+		var xBaby:Float = x;
+		if (!pureX) xBaby = (FlxG.width * x) - ((Note.swagWidth * size) * 2);
+		strumLine = new StrumLine([], FlxPoint.get(xBaby, y), size, true);
+		strumLine.data = {keyCount: mania}
+		strumLine.strumScale = size;
+		generateStrums(mania);
 
 		// wouldn't let me do add normally for some reason.
 		group.add(strumLine);
 		group.add(splashHandler = new SplashHandler());
 
 		var splashSkinList:Array<String> = [];
-
 		var xmlPath:String = 'data/splashes/';
 		for (file in CoolUtil.coolTextFile(xmlPath + 'list.txt'))
 			splashSkinList.push(file);
-		for (file in Paths.getFolderContent(xmlPath)) {
+		for (file in Paths.getFolderContent(xmlPath))
 			if (StringTools.endsWith(file, '.xml')) {
 				var simpleName:String = StringTools.replace(file, '.xml', '');
 				if (splashSkinList.contains(simpleName)) continue;
 				splashSkinList.push(simpleName);
 			}
-		}
-
-		for (skin in splashSkinList) {
-			if (!checkFileExists('data/splashes/' + skin + '.xml')) continue;
-			var splash:FunkinSprite = splashHandler.getSplashGroup(skin).showOnStrum(strumLine.members[0]);
-			splashHandler.add(splash);
-			while (splashHandler.members.length > Flags.MAX_SPLASHES)
-				splashHandler.remove(splashHandler.members[0], true);
-
-			splashScales.set(skin, splash?.scale?.x ?? 1);
-			splash?.active = false;
-		}
+		for (skin in splashSkinList)
+			for (i in 0...mania)
+				spawnSplash(i, skin)?.active = false;
 	}
 
-	/**
-	 * Change the note or strum skin.
-	 * @param sprite The note or strum object itself.
-	 * @param direction The direction ID.
-	 * @param skinName The name of the new skin.
-	 * @param isPixel Should it be pixel?
-	 * @param forceReload Force change the skin.
-	 * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
-	 * @return `Bool` ~ If true, the skin changed successfully.
-	 */
-	public function changeSkin(sprite:Dynamic, direction:Int, skinName:String, ?isPixel:Bool = false, ?forceReload:Bool = false, ?animPrefix:String):Bool {
-		isPixel ??= false;
-		forceReload ??= false;
-		var length:Int = strumLine.length;
-		var fixedID:Int = direction % length;
-		animPrefix ??= strumLine.strumAnimPrefix[fixedID];
-
-		if (sprite is Note) {
-			if (!forceReload)
-				if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
-					return false;
-			if (skinName == null || isPixel == null)
-				return false;
-			var theSkin:String = getSkinPath(skinName);
-			if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'default');
-			if (isPixel) {
-				if (sprite.isSustainNote) {
-					var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
-					sprite.loadGraphic(Paths.image(ughSkin));
-					sprite.width = sprite.width / 4;
-					sprite.height = sprite.height / 2;
-					sprite.loadGraphic(Paths.image(ughSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-				} else {
-					sprite.loadGraphic(Paths.image(theSkin));
-					sprite.width = sprite.width / 4;
-					sprite.height = sprite.height / 5;
-					sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-				}
-				loadAnimsThePixelWay(sprite, direction, length);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			} else {
-				sprite.frames = Paths.getFrames(theSkin);
-
-				var colors:Array<String> = ['purple', 'blue', 'green', 'red'];
-				switch (fixedID) {
-					case 0:
-						sprite.animation.addByPrefix('scroll', 'purple0', 24);
-						sprite.animation.addByPrefix('hold', 'purple hold piece', 24);
-						sprite.animation.addByPrefix('holdend', 'pruple end hold', 24);
-					default:
-						sprite.animation.addByPrefix('scroll', colors[fixedID] + '0', 24);
-						sprite.animation.addByPrefix('hold', colors[fixedID] + ' hold piece', 24);
-						sprite.animation.addByPrefix('holdend', colors[fixedID] + ' hold end', 24);
-				}
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			}
-			sprite.updateHitbox();
-			sprite.antialiasing = !isPixel;
-			sprite.extra.set('curSkin', skinName);
-			sprite.extra.set('visualIndex', direction);
-			sprite.extra.set('isPixel', isPixel);
-		} else if (sprite is Strum) {
-			if (!forceReload)
-				if (sprite.extra.get('curSkin') == skinName && sprite.extra.get('isPixel') == isPixel)
-					return false;
-			if (skinName == null || isPixel == null)
-				return false;
-			var theSkin:String = getSkinPath(skinName);
-			if (!checkFileExists('images/' + theSkin + '.png')) theSkin = getSkinPath(skinName = 'default');
-			if (isPixel) {
-				sprite.loadGraphic(Paths.image(theSkin));
-				sprite.width = sprite.width / 4;
-				sprite.height = sprite.height / 5;
-				sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-				loadAnimsThePixelWay(sprite, direction, length);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			} else {
-				sprite.frames = Paths.getFrames(theSkin);
-				sprite.animation.addByPrefix('green', 'arrowUP', 24);
-				sprite.animation.addByPrefix('blue', 'arrowDOWN', 24);
-				sprite.animation.addByPrefix('purple', 'arrowLEFT', 24);
-				sprite.animation.addByPrefix('red', 'arrowRIGHT', 24);
-
-				sprite.animation.addByPrefix('static', 'arrow' + animPrefix.toUpperCase(), 24);
-				sprite.animation.addByPrefix('pressed', animPrefix + ' press', 24, false);
-				sprite.animation.addByPrefix('confirm', animPrefix + ' confirm', 24, false);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-
-				// chart editor preview only
-				sprite.animation.addByPrefix('note', ['purple', 'blue', 'green', 'red'][fixedID] + '0', 24);
-			}
-			sprite.updateHitbox();
-			sprite.antialiasing = !isPixel;
-			sprite.extra.set('curSkin', skinName);
-			sprite.extra.set('visualIndex', direction);
-			sprite.extra.set('isPixel', isPixel);
-		} else {
-			trace('Only Note\'s and Strum\'s please.');
-			return false;
+	public function generateStrums(amount:Int):Void {
+		while (strumLine.length != 0) {
+			var strum:Strum = strumLine.members[strumLine.length - 1];
+			strum.extra.remove('skinHandler');
+			strumLine.remove(strum);
+			strum.destroy();
 		}
-		return true;
-	}
-	/**
-	 * Change the note or strum texture.
-	 * @param sprite The note or strum object itself.
-	 * @param direction The direction ID.
-	 * @param texturePath The texture location.
-	 * @param isPixel Should it be pixel?
-	 * @param animPrefix (Optional) Animation prefix (`left` = `arrowLEFT`, `left press`, `left confirm`).
-	 * @return `Bool` ~ If true, the texture changed successfully.
-	 */
-	public function changeTexture(sprite:Dynamic, direction:Int, texturePath:String, ?isPixel:Bool = false, ?animPrefix:String):Bool {
-		isPixel ??= false;
-		var length:Int = strumLine.length;
-		var fixedID:Int = direction % length;
-		animPrefix ??= strumLine.strumAnimPrefix[fixedID];
-
-		if (sprite is Note) {
-			if (texturePath == null || isPixel == null)
-				return false;
-			var theSkin:String = texturePath;
-			if (!checkFileExists('images/' + theSkin + '.png')) theSkin = (texturePath = 'game/notes/default');
-			if (isPixel) {
-				if (sprite.isSustainNote) {
-					var ughSkin:String = theSkin == 'stages/school/ui/arrows-pixels' ? 'stages/school/ui/arrowEnds' : (theSkin + 'ENDS');
-					sprite.loadGraphic(Paths.image(ughSkin));
-					sprite.width = sprite.width / 4;
-					sprite.height = sprite.height / 2;
-					sprite.loadGraphic(Paths.image(ughSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-				} else {
-					sprite.loadGraphic(Paths.image(theSkin));
-					sprite.width = sprite.width / 4;
-					sprite.height = sprite.height / 5;
-					sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
+		for (i in 0...amount) {
+			var babyArrow:Strum = new Strum(strumLine.startingPos.x + (Note.swagWidth * strumLine.strumScale * 1 * i), strumLine.startingPos.y + (Note.swagWidth * 0.5) - (Note.swagWidth * strumLine.strumScale * 0.5));
+			babyArrow.ID = i;
+			babyArrow.strumLine = strumLine;
+			new NoteskinHandler(babyArrow, skin).reloadSkin();
+			babyArrow.animation.onFinish.add(name -> {
+				switch (name) {
+					case 'confirm': babyArrow.playAnim('pressed');
+					case 'note': babyArrow.playAnim('static');
 				}
-				loadAnimsThePixelWay(sprite, direction, length);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			} else {
-				sprite.frames = Paths.getFrames(theSkin);
-
-				var colors:Array<String> = ['purple', 'blue', 'green', 'red'];
-				switch (fixedID) {
-					case 0:
-						sprite.animation.addByPrefix('scroll', 'purple0', 24);
-						sprite.animation.addByPrefix('hold', 'purple hold piece', 24);
-						sprite.animation.addByPrefix('holdend', 'pruple end hold', 24);
-					default:
-						sprite.animation.addByPrefix('scroll', colors[fixedID] + '0', 24);
-						sprite.animation.addByPrefix('hold', colors[fixedID] + ' hold piece', 24);
-						sprite.animation.addByPrefix('holdend', colors[fixedID] + ' hold end', 24);
-				}
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			}
-			sprite.updateHitbox();
-			sprite.antialiasing = !isPixel;
-			sprite.extra.set('curSkin', texturePath);
-			sprite.extra.set('visualIndex', direction);
-			sprite.extra.set('isPixel', isPixel);
-		} else if (sprite is Strum) {
-			if (texturePath == null || isPixel == null)
-				return false;
-			var theSkin:String = texturePath;
-			if (!checkFileExists('images/' + theSkin + '.png')) theSkin = (texturePath = 'game/notes/default');
-			if (isPixel) {
-				sprite.loadGraphic(Paths.image(theSkin));
-				sprite.width = sprite.width / 4;
-				sprite.height = sprite.height / 5;
-				sprite.loadGraphic(Paths.image(theSkin), true, Math.floor(sprite.width), Math.floor(sprite.height));
-				loadAnimsThePixelWay(sprite, direction, length);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-			} else {
-				sprite.frames = Paths.getFrames(theSkin);
-				sprite.animation.addByPrefix('green', 'arrowUP', 24);
-				sprite.animation.addByPrefix('blue', 'arrowDOWN', 24);
-				sprite.animation.addByPrefix('purple', 'arrowLEFT', 24);
-				sprite.animation.addByPrefix('red', 'arrowRIGHT', 24);
-
-				sprite.animation.addByPrefix('static', 'arrow' + animPrefix.toUpperCase(), 24);
-				sprite.animation.addByPrefix('pressed', animPrefix + ' press', 24, false);
-				sprite.animation.addByPrefix('confirm', animPrefix + ' confirm', 24, false);
-				sprite.setGraphicSize(Std.int((sprite.width * data.scale) * strumLine.strumScale));
-
-				// chart editor preview only
-				sprite.animation.addByPrefix('note', ['purple', 'blue', 'green', 'red'][fixedID] + '0', 24);
-			}
-			sprite.updateHitbox();
-			sprite.antialiasing = !isPixel;
-			sprite.extra.set('curSkin', texturePath);
-			sprite.extra.set('visualIndex', direction);
-			sprite.extra.set('isPixel', isPixel);
-		} else {
-			trace('Only Note\'s and Strum\'s please.');
-			return false;
+			});
+			strumLine.insert(i, babyArrow);
 		}
-		return true;
 	}
 
 	/**
 	 * Spawns a splash.
 	 * @param direction Which strum should it spawn on?
 	 * @param skinName The name of the splash skin.
-	 * @return `FunkinSprite` ~ The splash that was spawned.
+	 * @return Splash ~ The splash that was spawned.
 	 */
-	public function spawnSplash(direction:Int, skinName:String):FunkinSprite {
-		if (!checkFileExists('data/splashes/' + skinName + '.xml')) skinName = 'default';
-		var splash:FunkinSprite = splashHandler.getSplashGroup(skinName).showOnStrum(strumLine.members[direction]);
+	public function spawnSplash(direction:Int, skinName:String):Splash {
+		var name = NoteskinRegistry.skinNameHelper(skinName, SkinType.SPLASH, skinParamsContext == 'character');
+		if (!Assets.exists(Paths.xml('splashes/' + name))) name = 'default';
+		var splash:Splash = splashHandler.getSplashGroup(name).showOnStrum(strumLine.members[direction]);
 		splashHandler.add(splash);
 		while (splashHandler.members.length > Flags.MAX_SPLASHES)
 			splashHandler.remove(splashHandler.members[0], true);
 
-		var scale:Float = splashScales.exists(skinName) ? splashScales.get(skinName) : 1;
-		splash.scale.set(scale * previewStrumLine.strumScale, scale * previewStrumLine.strumScale);
+		if (!splashScales.exists(name))
+			splashScales.set(name, splash?.scale?.x ?? 1);
+		var scale:Float = splashScales.get(name);
+		splash.scale.set(scale * strumLine.strumScale, scale * strumLine.strumScale);
 
 		return splash;
-	}
-
-	private function checkFileExists(path:String):Bool
-		return Assets.exists(Paths.file(path));
-	private function loadAnimsThePixelWay(sprite:Dynamic, direction:Int, ?length:Int = 4):Void {
-		length ??= 4;
-		if (sprite is Note) {
-			if (sprite.isSustainNote) sprite.animation.add('holdend', [direction + length], 12);
-			sprite.animation.add(sprite.isSustainNote ? 'hold' : 'scroll', [direction + (sprite.isSustainNote ? 0 : length)], 12);
-		} else if (sprite is Strum) {
-			sprite.animation.add('static', [direction], 12);
-			sprite.animation.add('pressed', [direction + length, direction + (length * 2)], 12, false);
-			sprite.animation.add('confirm', [direction + (length * 3), direction + (length * 4)], 12, false);
-
-			// chart editor preview only
-			sprite.animation.add('note', [direction + length], 12);
-		} else trace('Only Note\'s and Strum\'s please.');
-	}
-	private function getSkinPath(skin:String):String {
-		var texture:String = data != null ? data.texture : ('game/notes/' + skin);
-		return StringTools.trim(texture) == '' ? 'game/notes/default' : texture;
 	}
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE codename-engine-arrowskin>
-<arrowskin sprite="game/notes/default">
+<arrowskin name="Funkin'" sprite="game/notes/default">
 	<strums>
 		<mania count="4">
 			<set id="0">

@@ -1,32 +1,27 @@
-// code stolen from my friend @NebulaStellaNova <3
-
-import flixel.effects.FlxFlicker;
 import funkin.backend.MusicBeatState;
-import funkin.editors.EditorTreeMenu.EditorTreeMenuScreen;
+import funkin.editors.EditorTreeMenu;
 
-var skinIndex:Int;
+var optionIndex:Int;
 function create():Void {
-	skinIndex = options.length;
-	options.push({
+	options.insert(optionIndex = 4, {
 		name: 'Noteskin Editor',
-		iconID: 3,
-		state: ModState
+		id: 'noteskin',
+		state: null,
+		onClick: () -> {
+			CoolUtil.playMenuSFX(1);
+			selected = MusicBeatState.skipTransIn = MusicBeatState.skipTransOut = true;
+			FlxG.sound?.music?.fadeOut(0.7, 0, () -> FlxG.sound.music.stop());
+			sprites[curSelected].flicker(() -> {
+				subCam.fade(FlxColor.BLACK, 0.25, false, () -> {
+					var state:EditorTreeMenu = new EditorTreeMenu();
+					state.scriptName = 'editors/noteskin/selector/SkinList';
+					FlxG.switchState(state);
+				});
+			});
+		}
 	});
 }
 
-var overrodeFlicker:Bool = false;
-function update(elapsed:Float):Void {
-	if (skinIndex <= -1 || overrodeFlicker)
-		return;
-
-	if (curSelected == skinIndex && selected && FlxFlicker.isFlickering(sprites[skinIndex].label)) {
-		FlxFlicker._boundObjects[sprites[skinIndex].label].completionCallback = (_) -> {
-			subCam.fade(0xFF000000, 0.25, false, () -> {
-				var state:EditorTreeMenuScreen = new EditorTreeMenuScreen();
-				MusicBeatState.lastScriptName = 'editors/noteskin/selector/SkinList';
-				FlxG.switchState(state);
-			});
-		}
-		overrodeFlicker = true;
-	}
+function postCreate():Void {
+	sprites[optionIndex].label.text = options[optionIndex].name;
 }

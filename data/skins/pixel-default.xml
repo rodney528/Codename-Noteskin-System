@@ -1,5 +1,5 @@
 <!DOCTYPE codename-engine-arrowskin>
-<arrowskin sprite="stages/school/ui/arrows-pixels" scale="6" pixel="true" width="4" height="5">
+<arrowskin name="Pixel" sprite="stages/school/ui/arrows-pixels" scale="6" pixel="true" width="4" height="5">
 	<strums>
 		<mania count="4">
 			<set id="0">

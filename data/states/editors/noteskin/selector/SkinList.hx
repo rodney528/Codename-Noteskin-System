@@ -7,79 +7,27 @@ import funkin.options.type.OptionType;
 import options.type.NoteOption;
 
 static var selectedSkin:String = 'default';
-var noteSkinList:Array<String> = [];
+var arrowSkinList:Array<String> = [];
 
-var noteSkinData:Map<String, {texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float}> = [];
-var blankSkinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = {
-	texture: null,
-	pixelEnforcement: false,
-	offsets: {
-		still: [0, 0, 0],
-		press: [0, 0, 0],
-		glow: [0, 0, 0],
-		note: [0, 0, 0]
-	},
-	canUpdateStrum: false,
-	splashOverride: '',
-	scale: 0.7
-}
+var main:EditorTreeMenuScreen;
 
 function create():Void {
 	var noteOptions:Array<OptionType> = [];
 
-	var jsonPath:String = 'data/skins/';
-	for (file in CoolUtil.coolTextFile(jsonPath + 'list.txt')) {
-		var simpleName:String = file;
-		var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file + '.json'));
-
-		if (skinData.texture == null && StringTools.trim(skinData.texture) == '')
-			skinData.texture = 'game/notes/' + simpleName;
-		skinData.texture ??= 'game/notes/' + simpleName;
-
-		skinData.pixelEnforcement ??= blankSkinData.pixelEnforcement;
-		skinData.offsets ??= blankSkinData.offsets;
-		skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
-		skinData.scale ??= blankSkinData.scale;
-
-		noteSkinData.set(simpleName, skinData);
-		noteSkinList.push(simpleName);
-		noteOptions.push(new NoteOption(simpleName, skinData, () -> {
-			selectedSkin = simpleName;
+	NoteskinRegistry.reload(true, name -> {
+		arrowSkinList.push(name);
+		noteOptions.push(new NoteOption(name, () -> {
+			selectedSkin = name;
 			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
 		}));
-	}
-	for (file in Paths.getFolderContent(jsonPath)) {
-		if (StringTools.endsWith(file, '.json')) {
-			var simpleName:String = StringTools.replace(file, '.json', '');
-			if (noteSkinList.contains(simpleName)) continue;
+	});
 
-			var skinData:{texture:String, pixelEnforcement:Null<Bool>, offsets:{still:Array<Float>, press:Array<Float>, glow:Array<Float>, note:Array<Float>}, canUpdateStrum:Bool, splashOverride:String, scale:Float} = CoolUtil.parseJson(Paths.file(jsonPath + file));
+	noteOptions.insert(0, new NewOption('New Skin', 'Want to create a new skin?', () -> openSubState(new UISubstateWindow(true, 'editors/noteskin/selector/NewSkin'))));
 
-			if (skinData.texture == null && StringTools.trim(skinData.texture) == '')
-				skinData.texture = 'game/notes/' + simpleName;
-			skinData.texture ??= 'game/notes/' + simpleName;
-
-			skinData.pixelEnforcement ??= blankSkinData.pixelEnforcement;
-			skinData.offsets ??= blankSkinData.offsets;
-			skinData.canUpdateStrum ??= blankSkinData.canUpdateStrum;
-			skinData.scale ??= blankSkinData.scale;
-
-			noteSkinData.set(simpleName, skinData);
-			noteSkinList.push(simpleName);
-			noteOptions.push(new NoteOption(simpleName, skinData, () -> {
-				selectedSkin = simpleName;
-				FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
-			}));
-		}
-	}
-
-	noteOptions.insert(0, new NewOption('New Skin', 'Want to create a new skin?', () ->
-		openSubState(new UISubstateWindow(true, 'editors/noteskin/selector/NewSkin'))
-	));
-
-	main = new EditorTreeMenuScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);
-	main.changeSelection(1);
 	bgType = 'charter';
+	main = new EditorTreeMenuScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);
+	for (i in noteOptions) main.group.add(i);
+	addMenu(main);
 
 	Framerate.offset.y = 60;
 }

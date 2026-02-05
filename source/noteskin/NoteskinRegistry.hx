@@ -1,13 +1,16 @@
 import Xml;
-import backend.SkinType;
 import funkin.backend.system.Flags;
 
-class SkinHandler {
+class NoteskinRegistry {
 	/**
 	 * The default skins.
 	 */
-	public static var defaultSkins = {arrow: 'default', splash: 'default', covers: 'default'}
-	public static var defaultCharSkin:Bool = true;
+	public static var defaultSkins = {
+		arrow: Flags.customFlags.get('DEFAULT_ARROW_SKIN') ?? 'default',
+		splash: Flags.customFlags.get('DEFAULT_SPLASH_SKIN') ?? 'default',
+		covers: Flags.customFlags.get('DEFAULT_COVER_SKIN') ?? 'default'
+	}
+	public static var defaultCharSkin:Bool = (Flags.customFlags.get('DEFAULT_ALLOW_CHAR_SKINS') ?? 'true') == 'true';
 
 	/**
 	 * Loaded skin data's.
@@ -37,10 +40,9 @@ class SkinHandler {
 	 * Reloads the noteSkinData map.
 	 */
 	public static function reload(?renderListTxt:Bool, ?onEachFinish:String->Void):Void {
-		renderListTxt ??= false;
-		_skinList = [];
+		_skinList.resize(0);
 		noteSkinData.clear();
-		if (renderListTxt)
+		if (renderListTxt ?? false)
 			for (file in CoolUtil.coolTextFile('data/skins/list.txt'))
 				_reload(file, onEachFinish);
 		for (file in Paths.getFolderContent('data/skins/'))

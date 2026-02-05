@@ -4,7 +4,10 @@ function postCreate():Void {
 	topMenu[2].childs.push(null);
 	topMenu[2].childs.push({
 		label: 'Skin Parameters',
-		onSelect: () -> state.openSubState(new UISubstateWindow(true, 'ui/CharterNoteskinScreen')),
+		onSelect: () -> {
+			skinParamsContext = 'charter';
+			openSubState(new UISubstateWindow(true, 'ui/NoteskinScreen'));
+		},
 		color: 0xFF00C8FF
 	});
 }

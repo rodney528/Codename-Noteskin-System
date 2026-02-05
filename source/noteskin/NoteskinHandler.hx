@@ -1,8 +1,9 @@
 import Xml;
-import backend.SkinHandler;
+import funkin.backend.system.Flags;
 import funkin.backend.utils.ErrorCode;
+import noteskin.NoteskinRegistry;
 
-class SkinHelper {
+class NoteskinHandler {
 	var parent:Dynamic;
 	var parentType(get, never):String;
 	function get_parentType():String {
@@ -10,7 +11,7 @@ class SkinHelper {
 			return 'strum';
 		if (parent is Note)
 			return parent.isSustainNote ? 'sustain' : 'note';
-		throw 'Wtf is this??? (class:' + Type.getClassName(Type.getClass(parent)) + ')';
+		throw 'Wtf is this??? (class:' + Std.string(parent) + ')';
 		return null;
 	}
 
@@ -26,7 +27,7 @@ class SkinHelper {
 	function set_skin(value:String):String {
 		switch (parentType) {
 			case 'sustain':
-				parent.sustainParent.extra.get('skinHandler').skin = value;
+				_skin = parent.sustainParent.extra.get('skinHandler').skin = value;
 			default:
 				if (_skin != value)
 					reloadSkin(_skin = value);
@@ -44,16 +45,16 @@ class SkinHelper {
 		parent.animation.onPlay.add((name:String, forced:Bool, reversed:Bool, frame:Int) -> {
 			if (!offsetMap.exists(name)) return;
 			var offset:Array<Float> = offsetMap.get(name);
-			var downscroll = Reflect.getProperty(parent.camera, 'downscroll') ?? false;
 			parent.frameOffset.set(
 				-offset[0],
-				parentType == 'sustain' ? 0 : (-offset[1] - (downscroll ? offset[2] : 0))
+				parentType == 'sustain' ? 0 : (-offset[1] - (downscrollGet() ? offset[2] : 0))
 			);
 		});
+		parent.extra.set('skinHandler', this);
 	}
 
 	public function update():Void {
-		if (lastStrumLineSkin != parent.strumLine.extra.get('arrowSkin') ?? 'Song Skin')
+		if (exists && parentType != 'sustain' && lastStrumLineSkin != (parent.strumLine.extra.get('arrowSkin') ?? 'Song Skin'))
 			skin = lastStrumLineSkin = parent.strumLine.extra.get('arrowSkin') ?? 'Song Skin';
 	}
 
@@ -66,10 +67,10 @@ class SkinHelper {
 		function getName():String {
 			var skin:String = skin ?? this.skin ?? 'Parent Skin';
 			skin = StringTools.replace(skin, 'Parent Skin', parent.strumLine.extra.get('arrowSkin') ?? 'Song Skin');
-			return SkinHandler.skinNameHelper(skin, SkinType.ARROW);
+			return NoteskinRegistry.skinNameHelper(skin, SkinType.ARROW);
 		}
 		var skin:String = getName();
-		var access:Xml = SkinHandler.getSkinData(skin);
+		var access:Xml = NoteskinRegistry.getSkinData(skin);
 		var skinPath:Null<String> = cacheGraphic(access.get('sprite'));
 		for (part in access.elements())
 			if (part.nodeName == parentType + 's') {
@@ -111,13 +112,10 @@ class SkinHelper {
 					} else continue;
 				break;
 			} else continue;
-		var targetScale:Float = Std.parseFloat(access.get('scale') ?? '0.7') * parent.strumLine.strumScale;
-		parent.scale.set(targetScale, targetScale);
-		parent.updateHitbox();
 		parent.antialiasing = (access.get('pixel') ?? 'false') == 'false';
-
-		if (parentType == 'note' && (effectTail ?? (parentType == 'note')))
-			sustainLoop(parent, sustain -> sustain.extra.get('skinHandler').reloadSkin(), true);
+		var targetScale:Float = Std.parseFloat(access.get('scale') ?? Std.string(Flags.DEFAULT_NOTE_SCALE));
+		if (parentType == 'strum') parent.setGraphicSize((parent.width * targetScale) * parent.strumLine.strumScale);
+		else parent.scale.set(targetScale * parent.strumLine.strumScale, targetScale * parent.strumLine.strumScale);
 
 		switch (parentType) {
 			case 'strum': parent.playAnim('static');
@@ -125,6 +123,9 @@ class SkinHelper {
 			case 'sustain': parent.animation.play(parent.nextSustain == null ? 'holdend' : 'hold', true);
 		}
 		parent.updateHitbox();
+
+		if (parentType == 'note' && (effectTail ?? (parentType == 'note')))
+			sustainLoop(parent, sustain -> sustain.extra.get('skinHandler').reloadSkin(), true);
 	}
 
 	function sustainLoop(note:Note, func:Note->Void, ?noEffectParent:Bool):Void {
