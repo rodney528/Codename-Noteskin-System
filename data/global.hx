@@ -1,4 +1,3 @@
-import String;
 import funkin.backend.utils.ErrorCode;
 
 static var skinParamsContext:String = '';
