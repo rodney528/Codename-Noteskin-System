@@ -14,7 +14,7 @@ function create():Void {
 			sprites[curSelected].flicker(() -> {
 				subCam.fade(FlxColor.BLACK, 0.25, false, () -> {
 					var state:EditorTreeMenu = new EditorTreeMenu();
-					state.scriptName = 'editors/noteskin/selector/SkinList';
+					state.scriptName = 'ui/NoteskinSelection';
 					FlxG.switchState(state);
 				});
 			});

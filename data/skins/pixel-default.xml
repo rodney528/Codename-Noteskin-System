@@ -3,24 +3,28 @@
 	<strums>
 		<mania count="4">
 			<set id="0">
+				<anim name="note" indices="4" fps="12"/>
 				<anim name="static" indices="0" fps="12"/>
 				<anim name="pressed" indices="4,8" fps="12"/>
 				<anim name="confirm" indices="12,16" fps="12"/>
 			</set>
 
 			<set id="1">
+				<anim name="note" indices="5" fps="12"/>
 				<anim name="static" indices="1" fps="12"/>
 				<anim name="pressed" indices="5,9" fps="12"/>
 				<anim name="confirm" indices="13,17" fps="12"/>
 			</set>
 
 			<set id="2">
+				<anim name="note" indices="6" fps="12"/>
 				<anim name="static" indices="2" fps="12"/>
 				<anim name="pressed" indices="6,10" fps="12"/>
 				<anim name="confirm" indices="14,18" fps="12"/>
 			</set>
 
 			<set id="3">
+				<anim name="note" indices="7" fps="12"/>
 				<anim name="static" indices="3" fps="12"/>
 				<anim name="pressed" indices="7,11" fps="12"/>
 				<anim name="confirm" indices="15,19" fps="12"/>

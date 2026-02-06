@@ -56,6 +56,7 @@ function create():Void {
 		}
 }
 
+var haveNoteAnimMap:Map<String, Bool> = [];
 function postCreate():Void {
 	function addLabelOn(ui:UISprite, text:String)
 		add(new UIText(ui?.x, ui.y - 24, 0, text));
@@ -86,10 +87,15 @@ function postCreate():Void {
 
 	add(colonThree = new UIText(windowSpr.x + 25 + windowSpr.bWidth - 60, windowSpr.y, 0, ':3', 15, -1));
 	colonThree.y = windowSpr.y + ((30 - colonThree.height) / 2) - 2;
-	colonThree.visible = false;
 	colonThree.angle = 90;
 
-	strumLine = new PreviewStrumLine(210, 115, true, skinList.arrow[arrowSkinDropdown.index], 4, 0.55);
+	strumLine = new PreviewStrumLine(220, 115, true, skinList.arrow[arrowSkinDropdown.index], 4, 0.55);
+	strumLine.onSkinChange = skin -> {
+		colonThree.visible = false;
+		if (!haveNoteAnimMap.exists(skin))
+			haveNoteAnimMap.set(skin, ![for (strum in strumLine.strumLine) strum.animation.exists('note')].contains(false));
+	}
+	strumLine.onSkinChange(strumLine.skin);
 	add(strumLine);
 
 	arrowSkinDropdown.onChange = (index:Int) -> {
@@ -156,24 +162,30 @@ function postCreate():Void {
 					var list = _parentState.customPropertiesButtonList;
 					var makeNote:Bool = true;
 					var makeSplash:Bool = true;
+					// var makeCover:Bool = true;
 					for (button in list.buttons) {
 						if (button.propertyText.label.text == 'arrowSkin') {
 							button.valueText.label.text = skinList.arrow[arrowSkinDropdown.index];
 							makeNote = false;
-						}
-						else if (button.propertyText.label.text == 'splashSkin') {
+						} else if (button.propertyText.label.text == 'splashSkin') {
 							button.valueText.label.text = skinList.splash[splashSkinDropdown.index];
 							makeSplash = false;
-						} else continue;
+						} /* else if (button.propertyText.label.text == 'coverSkin') {
+							button.valueText.label.text = skinList.covers[coverSkinDropdown.index];
+							makeCover = false;
+						} */ else continue;
 					}
 					if (makeNote)
 						list.add(new PropertyButton('arrowSkin', skinList.arrow[arrowSkinDropdown.index], list));
 					if (makeSplash)
 						list.add(new PropertyButton('splashSkin', skinList.splash[splashSkinDropdown.index], list));
+					/* if (makeCover)
+						list.add(new PropertyButton('coverSkin', skinList.covers[coverSkinDropdown.index], list)); */
 
 				} else {
 					state.character.extra.set('arrowSkin', skinList.arrow[arrowSkinDropdown.index]);
 					state.character.extra.set('splashSkin', skinList.splash[splashSkinDropdown.index]);
+					// state.character.extra.set('coverSkin', skinList.covers[coverSkinDropdown.index]);
 				}
 				close();
 			}, 125);
@@ -188,7 +200,7 @@ function postCreate():Void {
 }
 
 function update(elapsed:Float):Void {
-	if (FlxG.keys.justPressed.TAB)
+	if (haveNoteAnimMap.get(strumLine.skin) && FlxG.keys.justPressed.TAB)
 		colonThree.visible = !colonThree.visible;
 
 	var press:Array<Int> = [controls.NOTE_LEFT_P, controls.NOTE_DOWN_P, controls.NOTE_UP_P, controls.NOTE_RIGHT_P];
@@ -203,6 +215,6 @@ function update(elapsed:Float):Void {
 			}
 		}
 		if (release[i])
-			strum.playAnim(colonThree.visible ? 'note' : 'static');
+			strum.playAnim('static');
 	}
 }

@@ -22,7 +22,7 @@ function create():Void {
 		}));
 	});
 
-	noteOptions.insert(0, new NewOption('New Skin', 'Want to create a new skin?', () -> openSubState(new UISubstateWindow(true, 'editors/noteskin/selector/NewSkin'))));
+	noteOptions.insert(0, new NewOption('New Skin', 'Want to create a new skin?', () -> openSubState(new UISubstateWindow(true, 'ui/NewSkinScreen'))));
 
 	bgType = 'charter';
 	main = new EditorTreeMenuScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);

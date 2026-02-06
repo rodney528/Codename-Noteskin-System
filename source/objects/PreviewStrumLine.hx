@@ -22,8 +22,11 @@ class PreviewStrumLine extends MusicBeatGroup {
 			if (handler.skin != value)
 				handler.skin = value;
 		}
+		if (onSkinChange != null)
+			onSkinChange(value);
 		return skin = value;
 	}
+	public var onSkinChange:String->Void = null;
 
 	public function new(?x:Float, ?y:Float, ?pureX:Bool, skin:String, ?startMania:Int, ?size:Float) {
 		pureX ?? false;
@@ -72,12 +75,7 @@ class PreviewStrumLine extends MusicBeatGroup {
 			babyArrow.ID = i;
 			babyArrow.strumLine = strumLine;
 			new NoteskinHandler(babyArrow, skin).reloadSkin();
-			babyArrow.animation.onFinish.add(name -> {
-				switch (name) {
-					case 'confirm': babyArrow.playAnim('pressed');
-					case 'note': babyArrow.playAnim('static');
-				}
-			});
+			babyArrow.animation.onFinish.add(name -> if (name == 'confirm') babyArrow.playAnim('pressed'));
 			strumLine.insert(i, babyArrow);
 		}
 	}
@@ -95,12 +93,6 @@ class PreviewStrumLine extends MusicBeatGroup {
 		splashHandler.add(splash);
 		while (splashHandler.members.length > Flags.MAX_SPLASHES)
 			splashHandler.remove(splashHandler.members[0], true);
-
-		if (!splashScales.exists(name))
-			splashScales.set(name, splash?.scale?.x ?? 1);
-		var scale:Float = splashScales.get(name);
-		splash.scale.set(scale * strumLine.strumScale, scale * strumLine.strumScale);
-
 		return splash;
 	}
 }

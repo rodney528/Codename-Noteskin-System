@@ -3,24 +3,28 @@
 	<strums>
 		<mania count="4">
 			<set id="0">
+				<anim name="note" anim="purple0"/>
 				<anim name="static" anim="arrowLEFT"/>
 				<anim name="pressed" anim="left press"/>
 				<anim name="confirm" anim="left confirm"/>
 			</set>
 
 			<set id="1">
+				<anim name="note" anim="blue0"/>
 				<anim name="static" anim="arrowDOWN"/>
 				<anim name="pressed" anim="down press"/>
 				<anim name="confirm" anim="down confirm"/>
 			</set>
 
 			<set id="2">
+				<anim name="note" anim="green0"/>
 				<anim name="static" anim="arrowUP"/>
 				<anim name="pressed" anim="up press"/>
 				<anim name="confirm" anim="up confirm"/>
 			</set>
 
 			<set id="3">
+				<anim name="note" anim="red0"/>
 				<anim name="static" anim="arrowRIGHT"/>
 				<anim name="pressed" anim="right press"/>
 				<anim name="confirm" anim="right confirm"/>

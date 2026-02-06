@@ -137,6 +137,6 @@ function _save_as(_):Void {
 
 function _exit(_):Void {
 	var state:EditorTreeMenu = new EditorTreeMenu();
-	MusicBeatState.lastScriptName = state.scriptName = 'editors/noteskin/selector/SkinList';
+	state.scriptName = 'ui/NoteskinSelection';
 	FlxG.switchState(state);
 }
