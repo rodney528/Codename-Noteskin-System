@@ -8,6 +8,11 @@ static var SkinType = {
 	SPLASH: 'splash',
 	COVERS: 'covers'
 }
+static var ArrowType = {
+	STRUM: 'strum',
+	NOTE: 'note',
+	SUSTAIN: 'sustain'
+}
 
 static var downscrollGet:Void->Bool = () -> return false;
 function preStateSwitch():Void {

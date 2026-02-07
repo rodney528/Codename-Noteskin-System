@@ -1,4 +1,6 @@
 import Xml;
+import haxe.io.Path;
+import funkin.backend.assets.ModsFolder;
 import funkin.backend.system.Flags;
 
 class NoteskinRegistry {
@@ -43,9 +45,12 @@ class NoteskinRegistry {
 		_skinList.resize(0);
 		noteSkinData.clear();
 		if (renderListTxt ?? false)
-			for (file in CoolUtil.coolTextFile('data/skins/list.txt'))
-				_reload(file, onEachFinish);
-		for (file in Paths.getFolderContent('data/skins/'))
+			for (i in ModsFolder.getLoadedMods()) {
+				var path:String = Paths.txt('skins/list/LIB_' + i);
+				for (file in Paths.assetsTree.exists(path) ? CoolUtil.coolTextFile(path) : [for (c in Paths.getFolderContent('data/skins/LIB_' + i)) if (Path.extension(c).toLowerCase() == 'xml') Path.withoutExtension(c)])
+					_reload(file, onEachFinish);
+			}
+		for (file in Paths.getFolderContent('data/skins'))
 			if (StringTools.endsWith(file, '.xml'))
 				_reload(StringTools.replace(file, '.xml', ''), onEachFinish);
 	}

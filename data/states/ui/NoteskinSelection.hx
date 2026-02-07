@@ -1,7 +1,10 @@
+import Xml;
+import haxe.xml.Printer;
 import funkin.backend.system.framerate.Framerate;
 import funkin.editors.EditorTreeMenu.EditorTreeMenuScreen;
 import funkin.editors.ui.UIState;
 import funkin.editors.ui.UISubstateWindow;
+import funkin.editors.ui.UIWarningSubstate;
 import funkin.options.type.NewOption;
 import funkin.options.type.OptionType;
 import options.type.NoteOption;
@@ -27,7 +30,25 @@ function create():Void {
 	bgType = 'charter';
 	main = new EditorTreeMenuScreen('Noteskin Editor', 'Select a skin to modify.', noteOptions);
 	for (i in noteOptions) main.group.add(i);
+	main.curSelected = 1;
 	addMenu(main);
 
 	Framerate.offset.y = 60;
+}
+
+static function addArrowskinToList(skin:String, xml:Xml):Void {
+	if (arrowSkinList.contains(skin)) {
+		openSubState(new UIWarningSubstate('TITLE', 'MESSAGE', [
+			{label: translate('editor.ok'), color: FlxColor.RED, onClick: _ -> {}}
+		]));
+		return;
+	}
+
+	var xmlPath:String = Paths.getAssetsRoot() + 'data/skins/' + skin + '.xml';
+	CoolUtil.safeSaveFile(xmlPath, '<!DOCTYPE codename-engine-arrowskin>\n' + Printer.print(xml, true));
+
+	main.group.insert(1, new NoteOption(skin, () -> {
+		selectedSkin = skin;
+		FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
+	}));
 }

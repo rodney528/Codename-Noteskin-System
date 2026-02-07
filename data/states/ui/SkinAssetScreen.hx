@@ -1,64 +1,68 @@
+import sys.io.File;
 import funkin.editors.ui.UIButton;
-import funkin.editors.ui.UICheckbox;
-import funkin.editors.ui.UIDropDown;
 import funkin.editors.ui.UIImageExplorer;
 import funkin.editors.ui.UINumericStepper;
 import funkin.editors.ui.UIText;
 import funkin.editors.ui.UITextBox;
 
+var spriteNameTextBox:UITextBox;
 var imagePreviewField:UIImageExplorer;
+var widthStepper:UINumericStepper;
+var heightStepper:UINumericStepper;
+
+var widTit:UIText;
+var heiTit:UIText;
 
 var saveButton:UIButton;
 var closeButton:UIButton;
 
 function create():Void {
-	winTitle = 'Creating skin parameters';
-	winWidth = 500;
-	winHeight = 410;
+	winTitle = 'Selecting Sprite Asset';
+	if (currentSpriteInput.lastInput != null)
+		winTitle += ' (' + currentSpriteInput.lastInput.toUpperCase() + ')';
+	winWidth = 460;
+	winHeight = 520;
 }
 
 function postCreate():Void {
+	function addLabelOn(ui:UISprite, text:String):UIText
+		return add(new UIText(ui.x, ui.y - 24, 0, text));
 
-	var title:UIText;
-	add(title = new UIText(windowSpr.x + 20, windowSpr.y + 30 + 16, 0, 'Create Noteskin File', 28));
+	add(spriteNameTextBox = new UITextBox(windowSpr.x + 20, windowSpr.y + 30 + 16 + 20, currentSpriteInput.lastName, 320));
+	addLabelOn(spriteNameTextBox, 'Skin Name');
 
-	add(imagePreviewField = new UIImageExplorer(title.x, title.y + 40, null, winWidth - 40, 80, (_, _) -> onImageLoad(), 'images/game/notes'));
+	add(imagePreviewField = new UIImageExplorer(spriteNameTextBox.x, spriteNameTextBox.y + 30 + 16 + 20, null, 400, 58, () -> onImageLoad(), 'images/game/notes'));
+	addLabelOn(imagePreviewField, 'Skin File');
+	imagePreviewField.maxSize.y -= 150;
 
-	saveButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
-		/* var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
-		var data;
-		CoolUtil.safeSaveFile(modRoot + 'data/skins/' + skinNameTextField.label.text + '.json', Json.stringify(data = {
-			texture: imagePathTextField.label.text,
-			pixelEnforcement: pixelForceDropDown.options[pixelForceDropDown.index] == 'null' ? null : (pixelForceDropDown.options[pixelForceDropDown.index] == 'true'),
-			offsets: {
-				still: [0, 0, 0],
-				press: [0, 0, 0],
-				glow: [0, 0, 0],
-				note: [0, 0, 0]
-			},
-			canUpdateStrum: updateStrumCheck.checked,
-			splashOverride: checkFileExists('data/splashes/' + splashOverrideTextField.label.text + '.xml') ? splashOverrideTextField.label.text : '',
-			scale: skinScaleStepper.value
-		}, null, '\t'));
-		_parentState.main.group.add(new NoteOption(skinNameTextField.label.text, 'Image Path: "' + (StringTools.trim(data.texture) != '' && data.texture != null ? data.texture : 'game/notes/default') + '" | Is Pixel: ' + data.pixelEnforcement + ' | Can Update Strum: ' + data.canUpdateStrum + ' | Splash Override: ' + (StringTools.trim(data.splashOverride) != '' && data.splashOverride != null ? data.splashOverride : 'No Skin') + ' | Scale: ' + data.scale, () -> {
-			selectedSkin = skinNameTextField.label.text;
-			FlxG.switchState(new UIState(true, 'editors/noteskin/NoteskinEditor'));
-		}, data)); */
+	add(widthStepper = new UINumericStepper(imagePreviewField.x, imagePreviewField.y + imagePreviewField.bHeight, 4, 1, 0, null, null, 100));
+	widTit = addLabelOn(widthStepper, 'Width  /');
+	add(heightStepper = new UINumericStepper(widthStepper.x + 90, widthStepper.y, currentSpriteInput.lastInput == ArrowType.SUSTAIN ? 2 : 5, 1, 0, null, null, 100));
+	heiTit = addLabelOn(heightStepper, 'Height Increment  * Only If Pixel');
+
+	saveButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, translate('editor.saveClose'), () -> {
+		currentSpriteInput.imageData = imagePreviewField.getSaveData();
+		currentSpriteInput.imageData.skinName = spriteNameTextBox.label.text;
+		currentSpriteInput.onSave();
 		close();
 	}, 125);
 	add(saveButton);
 
-	closeButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, 'Close', () -> close(), 125);
+	closeButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, translate('editor.cancel'), () -> close(), 125);
 	closeButton.color = FlxColor.RED;
 	add(closeButton);
+
+	onImageLoad();
 }
 
 function onImageLoad():Void {
 	windowSpr.bWidth = 20 + imagePreviewField.bWidth + 20;
-	windowSpr.bHeight = 30 + 16 + 20 + 32 + 30 + 10 + imagePreviewField.bHeight + 14 + saveButton.bHeight + 14;
+	windowSpr.bHeight = 30 + 16 + 20 + 32 + 30 + 100 + imagePreviewField.bHeight + 14 + saveButton.bHeight + 14;
 
-	saveButton.x = windowSpr.x + windowSpr.bWidth - 20 - 125;
-	saveButton.y = windowSpr.y + windowSpr.bHeight - 16 - 32;
+	saveButton.x = windowSpr.x + windowSpr.bWidth - 20 - saveButton.bWidth;
 	closeButton.x = saveButton.x - 20 - saveButton.bWidth;
-	closeButton.y = saveButton.y;
+	saveButton.y = closeButton.y = windowSpr.bHeight - 16 - 32;
+
+	widthStepper.y = heightStepper.y = imagePreviewField.y + imagePreviewField.bHeight + 50;
+	widTit.y = heiTit.y = widthStepper.y - 24;
 }

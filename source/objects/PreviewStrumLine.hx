@@ -49,14 +49,16 @@ class PreviewStrumLine extends MusicBeatGroup {
 		group.add(splashHandler = new SplashHandler());
 
 		var splashSkinList:Array<String> = [];
-		var xmlPath:String = 'data/splashes/';
-		for (file in CoolUtil.coolTextFile(xmlPath + 'list.txt'))
-			splashSkinList.push(file);
-		for (file in Paths.getFolderContent(xmlPath))
+		for (i in ModsFolder.getLoadedMods()) {
+			var path:String = Paths.txt('splashes/list/LIB_' + i);
+			for (file in Paths.assetsTree.exists(path) ? CoolUtil.coolTextFile(path) : [for (c in Paths.getFolderContent('data/splashes/LIB_' + i)) if (Path.extension(c).toLowerCase() == 'xml') Path.withoutExtension(c)])
+				splashSkinList.push(file);
+		}
+		for (file in Paths.getFolderContent('data/splashes'))
 			if (StringTools.endsWith(file, '.xml')) {
-				var simpleName:String = StringTools.replace(file, '.xml', '');
-				if (splashSkinList.contains(simpleName)) continue;
-				splashSkinList.push(simpleName);
+				var name:String = StringTools.replace(file, '.xml', '');
+				if (splashSkinList.contains(name)) continue;
+				splashSkinList.push(name);
 			}
 		for (skin in splashSkinList)
 			for (i in 0...mania)

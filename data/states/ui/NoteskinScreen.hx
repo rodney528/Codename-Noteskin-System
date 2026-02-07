@@ -1,3 +1,4 @@
+import Xml;
 import funkin.backend.chart.Chart;
 import funkin.editors.charter.Charter;
 import funkin.editors.extra.PropertyButton;
@@ -16,6 +17,7 @@ var splashSkinDropdown:UIDropDown;
 
 var strumLine:PreviewStrumLine;
 
+var displayNames:Array<String> = [];
 var skinList:{arrow:Array<String>, splash:Array<String>, covers:Array<String>} = {
 	arrow: [],
 	splash: [],
@@ -24,17 +26,20 @@ var skinList:{arrow:Array<String>, splash:Array<String>, covers:Array<String>} =
 
 function create():Void {
 	if (skinParamsContext == 'charter') {
+		displayNames.push('Default Skin');
 		skinList.arrow.push('Default Skin');
 		skinList.splash.push('Default Skin');
 		skinList.covers.push('Default Skin');
 	}
 	if (skinParamsContext == 'strumline')
 		for (name in ['Default Skin', 'Song Skin']) {
+			displayNames.push(name);
 			skinList.arrow.push(name);
 			skinList.splash.push(name);
 			skinList.covers.push(name);
 		}
 	if (skinParamsContext == 'character') {
+		displayNames.push('No Skin');
 		skinList.arrow.push('No Skin');
 		skinList.splash.push('No Skin');
 		skinList.covers.push('No Skin');
@@ -44,11 +49,17 @@ function create():Void {
 	winWidth = 500;
 	winHeight = 410;
 
-	NoteskinRegistry.reload(true, name -> skinList.arrow.push(name));
-	var xmlPath:String = 'data/splashes/';
-	for (file in CoolUtil.coolTextFile(xmlPath + 'list.txt'))
-		skinList.splash.push(file);
-	for (file in Paths.getFolderContent(xmlPath))
+	NoteskinRegistry.reload(true, name -> {
+		var access:Xml = NoteskinRegistry.getSkinData(name);
+		displayNames.push(access.get('name') ?? name);
+		skinList.arrow.push(name);
+	});
+	for (i in ModsFolder.getLoadedMods()) {
+		var path:String = Paths.txt('splashes/list/LIB_' + i);
+		for (file in Paths.assetsTree.exists(path) ? CoolUtil.coolTextFile(path) : [for (c in Paths.getFolderContent('data/splashes/LIB_' + i)) if (Path.extension(c).toLowerCase() == 'xml') Path.withoutExtension(c)])
+			skinList.splash.push(file);
+	}
+	for (file in Paths.getFolderContent('data/splashes'))
 		if (StringTools.endsWith(file, '.xml')) {
 			var name:String = StringTools.replace(file, '.xml', '');
 			if (skinList.splash.contains(name)) continue;
@@ -80,7 +91,7 @@ function postCreate():Void {
 		case 'character': skinList.splash.indexOf(_parentState.character.extra.get('splashSkin') ?? 'No Skin') ?? 0;
 	}
 
-	add(arrowSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, skinList.arrow, arrowIndex));
+	add(arrowSkinDropdown = new UIDropDown(title.x, title.y + 65, 200, 32, displayNames, arrowIndex));
 	add(splashSkinDropdown = new UIDropDown(arrowSkinDropdown.x, arrowSkinDropdown.y + 65, 200, 32, skinList.splash, splashIndex));
 	addLabelOn(arrowSkinDropdown, 'Arrow Skin');
 	addLabelOn(splashSkinDropdown, 'Splash Skin');
@@ -103,7 +114,7 @@ function postCreate():Void {
 		var prevAnim:Array<String> = [for (strum in strumLine.strumLine) strum.getAnim()];
 		strumLine.skin = skinName;
 		for (i => strum in strumLine.strumLine.members) {
-			strum.playAnim(prevAnim[i]);
+			strum.playAnim(prevAnim[i]); // spawns splashes as an indication of a successful change
 			strumLine.spawnSplash(i, skinList.splash[splashSkinDropdown.index]);
 		}
 	}
@@ -114,7 +125,7 @@ function postCreate():Void {
 	switch (skinParamsContext) {
 		case 'charter':
 			var allowCharSkins:UICheckbox;
-			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
+			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, translate('editor.saveClose'), () -> {
 				var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
 				var result = PlayState.SONG.meta;
 				if (result.customValues == null)
@@ -129,7 +140,7 @@ function postCreate():Void {
 			}, 125);
 			add(saveButton);
 
-			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, 'Close', () -> close(), 125);
+			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, translate('editor.close'), () -> close(), 125);
 			closeButton.color = FlxColor.RED;
 			add(closeButton);
 
@@ -140,7 +151,7 @@ function postCreate():Void {
 			allowCharSkins.x += 6;
 			allowCharSkins.y += 4;
 		case 'strumline':
-			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
+			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, translate('editor.saveClose'), () -> {
 				var modRoot = StringTools.replace(Paths.getAssetsRoot(), './', '') + '/';
 				var result = NoteskinRegistry.getCurSongMeta(Charter.__song, Charter.__variant, Charter.instance.strumLines.length);
 				result[_parentState.strumLineID].arrow = skinList.arrow[arrowSkinDropdown.index];
@@ -151,13 +162,13 @@ function postCreate():Void {
 			}, 125);
 			add(saveButton);
 
-			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, 'Close', () -> close(), 125);
+			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, translate('editor.close'), () -> close(), 125);
 			closeButton.color = FlxColor.RED;
 			add(closeButton);
 
 			add(new UIText(windowSpr.x + 10, closeButton.y - 140, winWidth - 10, 'Notes:\n\n    * The "Default Skin" preview will not properly match the values of the "defaultSkins" variable, due to how this is coded.\n\n    * The "Song Skin" preview will be just fine as information for that is stored in the songs meta file.', 15, FlxColor.GRAY));
 		case 'character':
-			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Save & Close', () -> {
+			var saveButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, translate('editor.saveClose'), () -> {
 				if (_parentState?.customPropertiesButtonList != null) {
 					var list = _parentState.customPropertiesButtonList;
 					var makeNote:Bool = true;
@@ -191,7 +202,7 @@ function postCreate():Void {
 			}, 125);
 			add(saveButton);
 
-			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, 'Close', () -> close(), 125);
+			var closeButton:UIButton = new UIButton(saveButton.x - 20 - saveButton.bWidth, saveButton.y, translate('editor.close'), () -> close(), 125);
 			closeButton.color = FlxColor.RED;
 			add(closeButton);
 

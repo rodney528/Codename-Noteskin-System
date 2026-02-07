@@ -30,7 +30,7 @@ function postCreate():Void {
 		add(lol);
 	}
 
-	var closeButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, 'Close', () -> close(), 125);
+	var closeButton:UIButton = new UIButton(windowSpr.x + windowSpr.bWidth - 20 - 125, windowSpr.y + windowSpr.bHeight - 16 - 32, translate('editor.close'), () -> close(), 125);
 	closeButton.color = FlxColor.RED;
 	add(closeButton);
 }
